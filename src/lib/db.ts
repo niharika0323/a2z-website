@@ -1,13 +1,41 @@
 import { DatabaseSync } from 'node:sqlite';
 import path from 'node:path';
 import fs from 'node:fs';
+import os from 'node:os';
 
-const dataDir = path.join(process.cwd(), 'data');
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+function getDatabasePath(): string {
+  // Check if running on Netlify, AWS Lambda, or other serverless host
+  const isServerless = Boolean(
+    process.env.NETLIFY || 
+    process.env.AWS_LAMBDA_FUNCTION_NAME || 
+    process.env.VERCEL
+  );
+
+  if (isServerless) {
+    const tmpDir = os.tmpdir();
+    const tmpPath = path.join(tmpDir, 'a2z.db');
+    
+    // Copy bundled seed database to /tmp if it doesn't exist yet
+    if (!fs.existsSync(tmpPath)) {
+      const bundledPath = path.join(process.cwd(), 'data', 'a2z.db');
+      if (fs.existsSync(bundledPath)) {
+        try {
+          fs.copyFileSync(bundledPath, tmpPath);
+        } catch (e) {
+          console.warn('Could not copy bundled database to /tmp, will initialize fresh', e);
+        }
+      }
+    }
+    return tmpPath;
+  }
+
+  // Local development
+  const dataDir = path.join(process.cwd(), 'data');
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+  return path.join(dataDir, 'a2z.db');
 }
-
-const dbPath = path.join(dataDir, 'a2z.db');
 
 // Global singleton to prevent connection leaks across Next.js reloads
 declare global {
@@ -17,10 +45,15 @@ declare global {
 
 function getDatabase(): DatabaseSync {
   if (!global.__a2z_db) {
+    const dbPath = getDatabasePath();
     const db = new DatabaseSync(dbPath);
     // Performance and integrity tuning
-    db.exec('PRAGMA journal_mode = WAL;');
-    db.exec('PRAGMA foreign_keys = ON;');
+    try {
+      db.exec('PRAGMA journal_mode = WAL;');
+      db.exec('PRAGMA foreign_keys = ON;');
+    } catch (e) {
+      console.warn('PRAGMA tuning warning:', e);
+    }
     initializeSchema(db);
     global.__a2z_db = db;
   }
