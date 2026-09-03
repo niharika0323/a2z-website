@@ -91,6 +91,20 @@ function initializeSchema(db: DatabaseSync) {
     );
   `);
 
+  // Table for verification tasks & statuses
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS verification_tasks (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      assigned_to TEXT DEFAULT '',
+      employee_name TEXT DEFAULT '',
+      priority TEXT DEFAULT 'Normal',
+      time TEXT DEFAULT 'SLA: 4h',
+      status TEXT DEFAULT 'In Progress',
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
   // Auto-seed Admin if not present
   const adminCheck = db.prepare('SELECT id FROM employees WHERE username = ?').get('admin');
   if (!adminCheck) {
@@ -201,6 +215,31 @@ function initializeSchema(db: DatabaseSync) {
     insertEvent.run('EVT-105', 'Diwali Celebration & Holiday', '2026-11-12', 'Holiday', 'Festival of Lights company celebration');
     insertEvent.run('EVT-106', 'Christmas Day', '2026-12-25', 'Holiday', 'Winter corporate holiday');
   }
+
+  // Pre-seed verification tasks if empty
+  const tasksCountRow = db.prepare('SELECT COUNT(*) as count FROM verification_tasks').get() as { count: number };
+  if (tasksCountRow.count === 0) {
+    const insertTask = db.prepare(`
+      INSERT INTO verification_tasks (id, title, assigned_to, employee_name, priority, time, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    insertTask.run('BGV-409', 'Aadhaar Biometric Liveness Scan', 'EMP-101', 'Alok Kumar', 'High', 'SLA: 4h', 'In Progress');
+    insertTask.run('BGV-118', 'District e-Courts Cross-Match', 'EMP-102', 'Priya Sharma', 'Urgent', 'SLA: 2h', 'Review');
+    insertTask.run('BGV-882', 'University Roll Forensic Auth', 'EMP-103', 'Rahul Verma', 'Normal', 'SLA: 24h', 'Verified');
+    insertTask.run('BGV-550', 'EPFO Service History Integrity', 'EMP-104', 'Sneha Patel', 'Normal', 'SLA: 12h', 'In Progress');
+  }
+}
+
+export interface VerificationTask {
+  id: string;
+  title: string;
+  assigned_to: string;
+  employee_name: string;
+  priority: 'Urgent' | 'High' | 'Normal';
+  time: string;
+  status: 'In Progress' | 'Review' | 'Verified' | 'Blocked';
+  created_at?: string;
 }
 
 export interface Employee {
@@ -399,6 +438,110 @@ export const db = {
   deleteEvent(id: string): boolean {
     const database = getDatabase();
     const res = database.prepare('DELETE FROM company_events WHERE id = ?').run(id);
+    return res.changes > 0;
+  },
+
+  // TASKS METHODS
+  getTasks(filter?: { status?: string; employee_id?: string }): VerificationTask[] {
+    const database = getDatabase();
+    let query = 'SELECT * FROM verification_tasks WHERE 1=1';
+    const params: unknown[] = [];
+    if (filter?.status && filter.status !== 'ALL') {
+      query += ' AND status = ?';
+      params.push(filter.status);
+    }
+    if (filter?.employee_id) {
+      query += ' AND assigned_to = ?';
+      params.push(filter.employee_id);
+    }
+    query += ' ORDER BY created_at DESC';
+    return database.prepare(query).all(...params) as unknown as VerificationTask[];
+  },
+
+  getTaskStats() {
+    const database = getDatabase();
+    const rows = database.prepare('SELECT status, COUNT(*) as count FROM verification_tasks GROUP BY status').all() as { status: string; count: number }[];
+    const totalRow = database.prepare('SELECT COUNT(*) as total FROM verification_tasks').get() as { total: number };
+
+    let inProgress = 0;
+    let review = 0;
+    let verified = 0;
+    let blocked = 0;
+
+    for (const r of rows) {
+      if (r.status === 'In Progress') inProgress += r.count;
+      else if (r.status === 'Review') review += r.count;
+      else if (r.status === 'Verified') verified += r.count;
+      else if (r.status === 'Blocked') blocked += r.count;
+    }
+
+    return {
+      total: totalRow?.total || 0,
+      inProgress,
+      review,
+      verified,
+      blocked
+    };
+  },
+
+  createTask(data: {
+    id?: string;
+    title: string;
+    assigned_to?: string;
+    employee_name?: string;
+    priority?: 'Urgent' | 'High' | 'Normal';
+    time?: string;
+    status?: 'In Progress' | 'Review' | 'Verified' | 'Blocked';
+  }): VerificationTask {
+    const database = getDatabase();
+    const id = data.id?.trim() || `BGV-${Math.floor(100 + Math.random() * 900)}`;
+    const priority = data.priority || 'Normal';
+    const time = data.time || 'SLA: 4h';
+    const status = data.status || 'In Progress';
+    const assigned_to = data.assigned_to || '';
+    const employee_name = data.employee_name || 'Staff Member';
+
+    const stmt = database.prepare(`
+      INSERT INTO verification_tasks (id, title, assigned_to, employee_name, priority, time, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    stmt.run(id, data.title, assigned_to, employee_name, priority, time, status);
+    return {
+      id,
+      title: data.title,
+      assigned_to,
+      employee_name,
+      priority,
+      time,
+      status
+    };
+  },
+
+  updateTask(id: string, updates: Partial<VerificationTask>): VerificationTask | undefined {
+    const database = getDatabase();
+    const existing = database.prepare('SELECT * FROM verification_tasks WHERE id = ?').get(id) as unknown as VerificationTask;
+    if (!existing) return undefined;
+
+    const fields: string[] = [];
+    const values: unknown[] = [];
+
+    if (updates.title !== undefined) { fields.push('title = ?'); values.push(updates.title); }
+    if (updates.status !== undefined) { fields.push('status = ?'); values.push(updates.status); }
+    if (updates.priority !== undefined) { fields.push('priority = ?'); values.push(updates.priority); }
+    if (updates.time !== undefined) { fields.push('time = ?'); values.push(updates.time); }
+    if (updates.assigned_to !== undefined) { fields.push('assigned_to = ?'); values.push(updates.assigned_to); }
+    if (updates.employee_name !== undefined) { fields.push('employee_name = ?'); values.push(updates.employee_name); }
+
+    if (fields.length === 0) return existing;
+
+    values.push(id);
+    database.prepare(`UPDATE verification_tasks SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+    return database.prepare('SELECT * FROM verification_tasks WHERE id = ?').get(id) as unknown as VerificationTask;
+  },
+
+  deleteTask(id: string): boolean {
+    const database = getDatabase();
+    const res = database.prepare('DELETE FROM verification_tasks WHERE id = ?').run(id);
     return res.changes > 0;
   }
 };

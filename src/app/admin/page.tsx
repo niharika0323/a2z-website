@@ -25,7 +25,8 @@ import {
   Mail,
   Phone,
   RefreshCw,
-  X
+  X,
+  ShieldCheck
 } from "lucide-react";
 import Link from "next/link";
 import Logo from "@/app/components/Logo";
@@ -59,15 +60,30 @@ interface CompanyEvent {
   description: string;
 }
 
+interface VerificationTask {
+  id: string;
+  title: string;
+  assigned_to: string;
+  employee_name: string;
+  priority: "Urgent" | "High" | "Normal";
+  time: string;
+  status: "In Progress" | "Review" | "Verified" | "Blocked";
+  created_at?: string;
+}
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<Employee | null>(null);
-  const [activeTab, setActiveTab] = useState<"EMPLOYEES" | "ATTENDANCE" | "CALENDAR">("EMPLOYEES");
+  const [activeTab, setActiveTab] = useState<"EMPLOYEES" | "ATTENDANCE" | "TASKS" | "CALENDAR">("EMPLOYEES");
 
   // Data states
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [stats, setStats] = useState<Stats>({ total: 0, present: 0, absent: 0, onLeave: 0 });
   const [events, setEvents] = useState<CompanyEvent[]>([]);
+  const [tasks, setTasks] = useState<VerificationTask[]>([]);
+  const [taskStats, setTaskStats] = useState({ total: 0, inProgress: 0, review: 0, verified: 0, blocked: 0 });
+  const [taskStatusFilter, setTaskStatusFilter] = useState("ALL");
+  const [taskSearchTerm, setTaskSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
 
   // Filters & Search
@@ -126,6 +142,7 @@ export default function AdminDashboard() {
 
     fetchEmployees();
     fetchEvents();
+    fetchTasks();
   }, [router]);
 
   const showNotification = (text: string, type: "success" | "error" = "success") => {
@@ -157,6 +174,39 @@ export default function AdminDashboard() {
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const fetchTasks = async () => {
+    try {
+      const res = await fetch("/api/tasks");
+      const data = await res.json();
+      if (res.ok) {
+        setTasks(data.tasks || []);
+        if (data.stats) setTaskStats(data.stats);
+      }
+    } catch (err) {
+      console.error("Failed to fetch tasks in admin", err);
+    }
+  };
+
+  const handleTaskStatusChange = async (taskId: string, newStatus: VerificationTask["status"]) => {
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: taskId, status: newStatus })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setTasks(prev => prev.map(t => t.id === taskId ? data.task : t));
+        if (data.stats) setTaskStats(data.stats);
+        showNotification(`Task status updated to "${newStatus}"`);
+      } else {
+        showNotification(data.error || "Failed to update task", "error");
+      }
+    } catch (err) {
+      showNotification("Error updating task status", "error");
     }
   };
 
@@ -295,6 +345,37 @@ export default function AdminDashboard() {
       showNotification("Error deleting event", "error");
     }
   };
+
+  // Delete Task
+  const handleDeleteTask = async (id: string) => {
+    try {
+      const res = await fetch(`/api/tasks?id=${encodeURIComponent(id)}`, {
+        method: "DELETE"
+      });
+      if (res.ok) {
+        setTasks(prev => prev.filter(t => t.id !== id));
+        fetchTasks();
+        showNotification("Task removed from verification queue.");
+      }
+    } catch (err) {
+      showNotification("Error deleting task", "error");
+    }
+  };
+
+  // Filtered Tasks
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(t => {
+      const q = taskSearchTerm.toLowerCase();
+      const matchesSearch =
+        t.id.toLowerCase().includes(q) ||
+        t.title.toLowerCase().includes(q) ||
+        (t.employee_name && t.employee_name.toLowerCase().includes(q)) ||
+        (t.assigned_to && t.assigned_to.toLowerCase().includes(q));
+
+      const matchesStatus = taskStatusFilter === "ALL" || t.status === taskStatusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [tasks, taskSearchTerm, taskStatusFilter]);
 
   // Filtered Employees
   const filteredEmployees = useMemo(() => {
@@ -563,6 +644,7 @@ export default function AdminDashboard() {
           {[
             { id: "EMPLOYEES", label: "Employee Management", icon: Users },
             { id: "ATTENDANCE", label: "Live Attendance Board", icon: Clock },
+            { id: "TASKS", label: `Tasks & Status (${taskStats.inProgress} Active)`, icon: ShieldCheck },
             { id: "CALENDAR", label: "Upcoming Events & Calendar", icon: Calendar }
           ].map(tab => {
             const Icon = tab.icon;
@@ -1077,6 +1159,263 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+          </div>
+        )}
+
+        {/* TAB 4: TASKS & VERIFICATION STATUS */}
+        {activeTab === "TASKS" && (
+          <div>
+            {/* Task KPI Counters */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '0.8rem', marginBottom: '1.2rem' }}>
+              <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.8)', borderRadius: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Total Queue</span>
+                  <ShieldCheck size={16} color="var(--lilac-dark)" />
+                </div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.2rem' }}>
+                  {taskStats.total}
+                </div>
+                <div style={{ fontSize: '0.66rem', color: 'var(--text-secondary)' }}>
+                  All registered tasks
+                </div>
+              </div>
+
+              <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.8)', borderRadius: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#1b4f72' }}>🔵 In Progress</span>
+                  <Clock size={16} color="#1b4f72" />
+                </div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1b4f72', marginTop: '0.2rem' }}>
+                  {taskStats.inProgress}
+                </div>
+                <div style={{ fontSize: '0.66rem', color: 'var(--text-secondary)' }}>
+                  Actively under forensic check
+                </div>
+              </div>
+
+              <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.8)', borderRadius: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#5b2c6f' }}>🟣 Under Review</span>
+                  <Layers size={16} color="#5b2c6f" />
+                </div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#5b2c6f', marginTop: '0.2rem' }}>
+                  {taskStats.review}
+                </div>
+                <div style={{ fontSize: '0.66rem', color: 'var(--text-secondary)' }}>
+                  Senior checker signoff pending
+                </div>
+              </div>
+
+              <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.8)', borderRadius: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#155724' }}>🟢 Verified / Done</span>
+                  <CheckCircle2 size={16} color="#155724" />
+                </div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#155724', marginTop: '0.2rem' }}>
+                  {taskStats.verified}
+                </div>
+                <div style={{ fontSize: '0.66rem', color: 'var(--text-secondary)' }}>
+                  Cleared background records
+                </div>
+              </div>
+
+              <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.8)', borderRadius: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#721c24' }}>🔴 Blocked</span>
+                  <XCircle size={16} color="#721c24" />
+                </div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#721c24', marginTop: '0.2rem' }}>
+                  {taskStats.blocked}
+                </div>
+                <div style={{ fontSize: '0.66rem', color: 'var(--text-secondary)' }}>
+                  Discrepancy / Adverse hit
+                </div>
+              </div>
+            </div>
+
+            {/* Task Filter & Search Bar */}
+            <div className="glass-card" style={{ padding: '0.7rem 1rem', marginBottom: '1rem', display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(255,255,255,0.75)', borderRadius: '12px' }}>
+              <div style={{ flex: '1 1 220px', position: 'relative' }}>
+                <Search size={14} color="var(--lilac-dark)" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '0.8rem' }} />
+                <input
+                  type="text"
+                  placeholder="Search tasks by ID, check description, assigned employee..."
+                  value={taskSearchTerm}
+                  onChange={(e) => setTaskSearchTerm(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.45rem 0.8rem 0.45rem 2.2rem',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(0,0,0,0.1)',
+                    fontSize: '0.78rem',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              <select
+                value={taskStatusFilter}
+                onChange={(e) => setTaskStatusFilter(e.target.value)}
+                style={{
+                  padding: '0.45rem 0.8rem',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(0,0,0,0.1)',
+                  fontSize: '0.78rem',
+                  outline: 'none',
+                  background: '#ffffff',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="ALL">All Statuses ({taskStats.total})</option>
+                <option value="In Progress">🔵 In Progress ({taskStats.inProgress})</option>
+                <option value="Review">🟣 Under Review ({taskStats.review})</option>
+                <option value="Verified">🟢 Verified / Done ({taskStats.verified})</option>
+                <option value="Blocked">🔴 Blocked ({taskStats.blocked})</option>
+              </select>
+
+              <button
+                onClick={fetchTasks}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  padding: '0.45rem 0.75rem',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(0,0,0,0.1)',
+                  background: '#ffffff',
+                  fontSize: '0.76rem',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+                title="Refresh Tasks"
+              >
+                <RefreshCw size={13} />
+                Refresh
+              </button>
+            </div>
+
+            {/* Tasks Table */}
+            <div className="glass-card" style={{ padding: '1rem', background: 'rgba(255,255,255,0.85)', borderRadius: '12px', overflowX: 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                  Verification Tasks Roster ({filteredTasks.length})
+                </h3>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                  Admin View & Live Status Control
+                </span>
+              </div>
+
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1.5px solid rgba(0,0,0,0.08)', color: 'var(--text-secondary)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <th style={{ padding: '0.6rem 0.7rem' }}>Task ID</th>
+                    <th style={{ padding: '0.6rem 0.7rem' }}>Verification Check</th>
+                    <th style={{ padding: '0.6rem 0.7rem' }}>Assigned Staff</th>
+                    <th style={{ padding: '0.6rem 0.7rem' }}>Priority</th>
+                    <th style={{ padding: '0.6rem 0.7rem' }}>SLA Target</th>
+                    <th style={{ padding: '0.6rem 0.7rem' }}>Current Status</th>
+                    <th style={{ padding: '0.6rem 0.7rem', textAlign: 'right' }}>Admin Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredTasks.map((t) => (
+                    <tr key={t.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', fontSize: '0.78rem' }}>
+                      <td style={{ padding: '0.65rem 0.7rem', fontWeight: 800, color: 'var(--lilac-dark)' }}>
+                        {t.id}
+                      </td>
+                      <td style={{ padding: '0.65rem 0.7rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        {t.title}
+                      </td>
+                      <td style={{ padding: '0.65rem 0.7rem' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: 'var(--lilac-light)', color: 'var(--lilac-dark)', padding: '0.15rem 0.55rem', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 700 }}>
+                          👤 {t.employee_name || t.assigned_to || 'Operations Staff'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.65rem 0.7rem' }}>
+                        <span style={{
+                          fontSize: '0.68rem',
+                          fontWeight: 800,
+                          padding: '0.15rem 0.5rem',
+                          borderRadius: '10px',
+                          background: t.priority === 'Urgent' ? '#f8d7da' : t.priority === 'High' ? '#fff3cd' : '#f0f0f0',
+                          color: t.priority === 'Urgent' ? '#721c24' : t.priority === 'High' ? '#856404' : '#555'
+                        }}>
+                          {t.priority}
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.65rem 0.7rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                        {t.time}
+                      </td>
+                      <td style={{ padding: '0.65rem 0.7rem' }}>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          fontSize: '0.72rem',
+                          fontWeight: 800,
+                          padding: '0.2rem 0.6rem',
+                          borderRadius: '12px',
+                          background:
+                            t.status === 'Verified' ? '#d4edda' :
+                            t.status === 'Review' ? '#e8daef' :
+                            t.status === 'Blocked' ? '#f8d7da' : '#eaf2f8',
+                          color:
+                            t.status === 'Verified' ? '#155724' :
+                            t.status === 'Review' ? '#5b2c6f' :
+                            t.status === 'Blocked' ? '#721c24' : '#1b4f72'
+                        }}>
+                          {t.status === 'Verified' && <CheckCircle2 size={12} />}
+                          {t.status === 'Review' && <Layers size={12} />}
+                          {t.status === 'Blocked' && <XCircle size={12} />}
+                          {t.status === 'In Progress' && <Clock size={12} />}
+                          {t.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.65rem 0.7rem', textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <select
+                            value={t.status}
+                            onChange={(e) => handleTaskStatusChange(t.id, e.target.value as any)}
+                            style={{
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '6px',
+                              border: '1px solid rgba(0,0,0,0.12)',
+                              fontSize: '0.7rem',
+                              fontWeight: 700,
+                              background: '#ffffff',
+                              cursor: 'pointer',
+                              outline: 'none'
+                            }}
+                          >
+                            <option value="In Progress">Set In Progress</option>
+                            <option value="Review">Set Review</option>
+                            <option value="Verified">Set Verified</option>
+                            <option value="Blocked">Set Blocked</option>
+                          </select>
+                          <button
+                            onClick={() => handleDeleteTask(t.id)}
+                            title="Delete Task"
+                            style={{ background: 'transparent', border: 'none', color: '#dc3545', cursor: 'pointer', padding: '0.2rem' }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+
+                  {filteredTasks.length === 0 && (
+                    <tr>
+                      <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                        No tasks match the filter criteria.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 

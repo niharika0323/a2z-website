@@ -45,7 +45,10 @@ interface CompanyEvent {
 
 export interface VerificationTask {
   id: string;
-  task: string;
+  title?: string;
+  task?: string;
+  assigned_to?: string;
+  employee_name?: string;
   priority: "Urgent" | "High" | "Normal";
   time: string;
   status: "In Progress" | "Review" | "Verified" | "Blocked";
@@ -104,43 +107,90 @@ export default function EmployeePortal() {
       } catch (e) {}
     }
 
+    fetchTasks();
     fetchDirectory();
     fetchEvents();
   }, [router]);
+
+  const fetchTasks = async () => {
+    try {
+      const res = await fetch("/api/tasks");
+      const data = await res.json();
+      if (res.ok && data.tasks && data.tasks.length > 0) {
+        setTasks(data.tasks);
+        localStorage.setItem("a2z_employee_tasks", JSON.stringify(data.tasks));
+      }
+    } catch (e) {
+      console.warn("Could not sync tasks from API, using cached", e);
+    }
+  };
 
   const saveTasks = (newTasks: VerificationTask[]) => {
     setTasks(newTasks);
     localStorage.setItem("a2z_employee_tasks", JSON.stringify(newTasks));
   };
 
-  const handleAddTask = (e: React.FormEvent) => {
+  const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTask.task.trim()) return;
     const id = `BGV-${Math.floor(100 + Math.random() * 900)}`;
     const created: VerificationTask = {
       id,
-      task: newTask.task.trim(),
+      title: newTask.task.trim(),
       priority: newTask.priority,
       time: newTask.time.trim() || "SLA: 4h",
-      status: newTask.status
+      status: newTask.status,
+      assigned_to: currentUser?.id || 'EMP-101',
+      employee_name: currentUser?.name || 'Staff Member'
     };
+    
+    // Update local state first
     const updated = [created, ...tasks];
     saveTasks(updated);
     setNewTask({ task: "", priority: "High", time: "SLA: 4h", status: "In Progress" });
     setShowAddTaskModal(false);
     showToast(`Task ${id} added successfully!`);
+
+    // Sync to backend DB
+    try {
+      await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(created)
+      });
+    } catch (err) {
+      console.warn("Offline or failed to sync task", err);
+    }
   };
 
-  const handleUpdateTaskStatus = (taskId: string, status: VerificationTask["status"]) => {
+  const handleUpdateTaskStatus = async (taskId: string, status: VerificationTask["status"]) => {
     const updated = tasks.map(t => t.id === taskId ? { ...t, status } : t);
     saveTasks(updated);
     showToast(`Task status updated to "${status}"`);
+
+    // Sync to backend DB
+    try {
+      await fetch("/api/tasks", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: taskId, status })
+      });
+    } catch (err) {
+      console.warn("Failed to sync task status", err);
+    }
   };
 
-  const handleDeleteTask = (taskId: string) => {
+  const handleDeleteTask = async (taskId: string) => {
     const updated = tasks.filter(t => t.id !== taskId);
     saveTasks(updated);
     showToast("Task removed from queue");
+
+    // Sync to backend DB
+    try {
+      await fetch(`/api/tasks?id=${taskId}`, { method: "DELETE" });
+    } catch (err) {
+      console.warn("Failed to delete task from DB", err);
+    }
   };
 
   const showToast = (msg: string) => {
@@ -461,7 +511,7 @@ export default function EmployeePortal() {
                     <div style={{ flex: '1 1 auto', minWidth: 0, marginRight: '0.5rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                         <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--lilac-dark)' }}>{item.id}</span>
-                        <span style={{ fontWeight: 700, fontSize: '0.74rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.task}</span>
+                        <span style={{ fontWeight: 700, fontSize: '0.74rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title || item.task}</span>
                       </div>
                       <div style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
                         {item.time} • Priority: <strong style={{ color: item.priority === 'Urgent' ? '#dc3545' : item.priority === 'High' ? '#e67e22' : 'inherit' }}>{item.priority}</strong>
