@@ -71,14 +71,13 @@ A modern, full-stack Next.js web application engineered for enterprise-grade **B
 
 ---
 
-## 🔑 Pre-Seeded Default Accounts
+## 🔑 Default Administrator Credentials
 
 | Role | Username | Password | Direct Portal Route |
 | :--- | :--- | :--- | :--- |
 | **Root Administrator** | `admin` | `admin` | `/admin` |
-| **Operations Staff** | `alok` | `password123` | `/employee` |
-| **Forensic Verifier** | `priya` | `password123` | `/employee` |
-| **Field Officer** | `rahul` | `password123` | `/employee` |
+
+*Note: Regular employee accounts are created and managed directly by the administrator from the Admin Portal.*
 
 ---
 

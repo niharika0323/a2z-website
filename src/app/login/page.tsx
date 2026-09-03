@@ -9,8 +9,8 @@ import Logo from "@/app/components/Logo";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("admin");
+  const [password, setPassword] = useState("admin");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -244,58 +244,13 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Quick Testing Badges */}
-        <div style={{ marginTop: '2.5rem', paddingTop: '1.8rem', borderTop: '1px solid rgba(0,0,0,0.08)' }}>
-          <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'center', marginBottom: '1rem' }}>
-            ⚡ Instant 1-Click Demo Logins
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
-            <button
-              type="button"
-              onClick={() => quickLogin("admin", "admin")}
-              style={{
-                padding: '0.8rem 0.6rem',
-                borderRadius: '10px',
-                border: '1px solid rgba(180, 151, 214, 0.5)',
-                background: 'rgba(244, 238, 248, 0.8)',
-                cursor: 'pointer',
-                textAlign: 'center',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-            >
-              <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--lilac-dark)' }}>
-                🛡️ Admin Account
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                user: <strong>admin</strong> | pass: <strong>admin</strong>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => quickLogin("alok", "password123")}
-              style={{
-                padding: '0.8rem 0.6rem',
-                borderRadius: '10px',
-                border: '1px solid rgba(0,0,0,0.1)',
-                background: 'rgba(255,255,255,0.8)',
-                cursor: 'pointer',
-                textAlign: 'center',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-            >
-              <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
-                👤 Employee Account
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                user: <strong>alok</strong> | pass: <strong>password123</strong>
-              </div>
-            </button>
+        {/* Admin Credential Notice */}
+        <div style={{ marginTop: '2rem', paddingTop: '1.4rem', borderTop: '1px solid rgba(0,0,0,0.08)', textAlign: 'center' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', background: 'rgba(244, 238, 248, 0.85)', border: '1px solid rgba(180, 151, 214, 0.4)', padding: '0.45rem 1.1rem', borderRadius: '25px', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+            <span style={{ fontWeight: 800, color: 'var(--lilac-dark)' }}>Admin Access:</span>
+            <span>user: <strong style={{ color: 'var(--text-primary)' }}>admin</strong></span>
+            <span>•</span>
+            <span>pass: <strong style={{ color: 'var(--text-primary)' }}>admin</strong></span>
           </div>
         </div>
       </motion.div>
