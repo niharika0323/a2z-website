@@ -38,7 +38,7 @@ interface Employee {
   department: string;
   email: string;
   phone: string;
-  status: "PRESENT" | "ABSENT" | "ON_LEAVE";
+  status: "PRESENT" | "ABSENT" | "ON_LEAVE" | "HALF_DAY";
   check_in_time: string;
   check_out_time: string;
 }
@@ -48,6 +48,7 @@ interface Stats {
   present: number;
   absent: number;
   onLeave: number;
+  halfDay?: number;
 }
 
 interface CompanyEvent {
@@ -166,7 +167,7 @@ export default function AdminDashboard() {
   };
 
   // Quick Attendance Status Toggle
-  const handleStatusChange = async (id: string, newStatus: "PRESENT" | "ABSENT" | "ON_LEAVE") => {
+  const handleStatusChange = async (id: string, newStatus: "PRESENT" | "ABSENT" | "ON_LEAVE" | "HALF_DAY") => {
     try {
       const res = await fetch("/api/employees", {
         method: "PUT",
@@ -630,6 +631,7 @@ export default function AdminDashboard() {
                   <option value="PRESENT">Present ({stats.present})</option>
                   <option value="ABSENT">Absent ({stats.absent})</option>
                   <option value="ON_LEAVE">On Leave ({stats.onLeave})</option>
+                  <option value="HALF_DAY">Half Day ({stats.halfDay || 0})</option>
                 </select>
               </div>
 
@@ -691,30 +693,35 @@ export default function AdminDashboard() {
                               <CheckCircle2 size={12} /> Present ({emp.check_in_time || 'Logged'})
                             </span>
                           )}
+                          {emp.status === "HALF_DAY" && (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: '#fff3cd', color: '#856404', padding: '0.2rem 0.55rem', borderRadius: '14px', fontWeight: 700, fontSize: '0.7rem' }}>
+                              <Clock3 size={12} /> Half Day ({emp.check_in_time || 'Logged'})
+                            </span>
+                          )}
                           {emp.status === "ABSENT" && (
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: '#f8d7da', color: '#721c24', padding: '0.2rem 0.55rem', borderRadius: '14px', fontWeight: 700, fontSize: '0.7rem' }}>
                               <XCircle size={12} /> Absent
                             </span>
                           )}
                           {emp.status === "ON_LEAVE" && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: '#fff3cd', color: '#856404', padding: '0.2rem 0.55rem', borderRadius: '14px', fontWeight: 700, fontSize: '0.7rem' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: '#fce4ec', color: '#c2185b', padding: '0.2rem 0.55rem', borderRadius: '14px', fontWeight: 700, fontSize: '0.7rem' }}>
                               <Clock3 size={12} /> On Leave
                             </span>
                           )}
                         </td>
                         {/* 1-Click Status Switcher */}
                         <td style={{ padding: '0.5rem 0.6rem' }}>
-                          <div style={{ display: 'flex', gap: '0.25rem' }}>
+                          <div style={{ display: 'flex', gap: '0.2rem' }}>
                             <button
                               onClick={() => handleStatusChange(emp.id, "PRESENT")}
                               title="Mark Present"
                               style={{
-                                padding: '0.2rem 0.45rem',
+                                padding: '0.2rem 0.4rem',
                                 borderRadius: '4px',
                                 border: '1px solid #28a745',
                                 background: emp.status === "PRESENT" ? '#28a745' : '#fff',
                                 color: emp.status === "PRESENT" ? '#fff' : '#28a745',
-                                fontSize: '0.68rem',
+                                fontSize: '0.66rem',
                                 fontWeight: 700,
                                 cursor: 'pointer'
                               }}
@@ -722,15 +729,31 @@ export default function AdminDashboard() {
                               Present
                             </button>
                             <button
+                              onClick={() => handleStatusChange(emp.id, "HALF_DAY")}
+                              title="Mark Half Day"
+                              style={{
+                                padding: '0.2rem 0.4rem',
+                                borderRadius: '4px',
+                                border: '1px solid #ffc107',
+                                background: emp.status === "HALF_DAY" ? '#ffc107' : '#fff',
+                                color: emp.status === "HALF_DAY" ? '#000' : '#856404',
+                                fontSize: '0.66rem',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Half
+                            </button>
+                            <button
                               onClick={() => handleStatusChange(emp.id, "ABSENT")}
                               title="Mark Absent"
                               style={{
-                                padding: '0.2rem 0.45rem',
+                                padding: '0.2rem 0.4rem',
                                 borderRadius: '4px',
                                 border: '1px solid #dc3545',
                                 background: emp.status === "ABSENT" ? '#dc3545' : '#fff',
                                 color: emp.status === "ABSENT" ? '#fff' : '#dc3545',
-                                fontSize: '0.68rem',
+                                fontSize: '0.66rem',
                                 fontWeight: 700,
                                 cursor: 'pointer'
                               }}
@@ -741,12 +764,12 @@ export default function AdminDashboard() {
                               onClick={() => handleStatusChange(emp.id, "ON_LEAVE")}
                               title="Mark On Leave"
                               style={{
-                                padding: '0.2rem 0.45rem',
+                                padding: '0.2rem 0.4rem',
                                 borderRadius: '4px',
-                                border: '1px solid #ffc107',
-                                background: emp.status === "ON_LEAVE" ? '#ffc107' : '#fff',
-                                color: emp.status === "ON_LEAVE" ? '#000' : '#b58105',
-                                fontSize: '0.68rem',
+                                border: '1px solid #c2185b',
+                                background: emp.status === "ON_LEAVE" ? '#c2185b' : '#fff',
+                                color: emp.status === "ON_LEAVE" ? '#fff' : '#c2185b',
+                                fontSize: '0.66rem',
                                 fontWeight: 700,
                                 cursor: 'pointer'
                               }}
@@ -1180,26 +1203,6 @@ export default function AdminDashboard() {
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
-                      Department *
-                    </label>
-                    <select
-                      value={newEmp.department}
-                      onChange={e => setNewEmp({ ...newEmp, department: e.target.value })}
-                      style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', boxSizing: 'border-box' }}
-                    >
-                      <option value="Verification Ops">Verification Ops</option>
-                      <option value="Forensic Review">Forensic Review</option>
-                      <option value="Engineering & Core Tech">Engineering & Core Tech</option>
-                      <option value="Quality & Checker Operations">Quality & Checker Operations</option>
-                      <option value="Legal & Compliance">Legal & Compliance</option>
-                      <option value="Human Resources">Human Resources</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
                       Corporate Email *
                     </label>
                     <input
@@ -1211,20 +1214,22 @@ export default function AdminDashboard() {
                       style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', boxSizing: 'border-box' }}
                     />
                   </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
-                      Initial Attendance Status
-                    </label>
-                    <select
-                      value={newEmp.status}
-                      onChange={e => setNewEmp({ ...newEmp, status: e.target.value as any })}
-                      style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', boxSizing: 'border-box' }}
-                    >
-                      <option value="PRESENT">Present</option>
-                      <option value="ABSENT">Absent</option>
-                      <option value="ON_LEAVE">On Leave</option>
-                    </select>
-                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
+                    Initial Attendance Status
+                  </label>
+                  <select
+                    value={newEmp.status}
+                    onChange={e => setNewEmp({ ...newEmp, status: e.target.value as any })}
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', boxSizing: 'border-box' }}
+                  >
+                    <option value="PRESENT">Present</option>
+                    <option value="HALF_DAY">Half Day</option>
+                    <option value="ABSENT">Absent</option>
+                    <option value="ON_LEAVE">On Leave</option>
+                  </select>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>

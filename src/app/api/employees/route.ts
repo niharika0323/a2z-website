@@ -25,9 +25,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { id, name, username, password, role, department, email, phone, status } = body;
 
-    if (!name || !username || !role || !department || !email) {
+    if (!name || !username || !role || !email) {
       return NextResponse.json(
-        { error: 'Name, username, role, department, and email are required.' },
+        { error: 'Name, username, role, and email are required.' },
         { status: 400 }
       );
     }
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       username: username.trim().toLowerCase(),
       password: password?.trim() || 'password123',
       role: role.trim(),
-      department: department.trim(),
+      department: department?.trim() || 'Operations',
       email: email.trim(),
       phone: phone?.trim() || '',
       status: status || 'PRESENT',

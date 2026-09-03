@@ -212,7 +212,7 @@ export interface Employee {
   department: string;
   email: string;
   phone: string;
-  status: 'PRESENT' | 'ABSENT' | 'ON_LEAVE';
+  status: 'PRESENT' | 'ABSENT' | 'ON_LEAVE' | 'HALF_DAY';
   check_in_time: string;
   check_out_time: string;
   created_at?: string;
@@ -267,19 +267,22 @@ export const db = {
     let present = 0;
     let absent = 0;
     let onLeave = 0;
+    let halfDay = 0;
 
     for (const r of rows) {
       const s = (r.status || '').toUpperCase();
       if (s === 'PRESENT') present += r.count;
       else if (s === 'ABSENT') absent += r.count;
       else if (s === 'ON_LEAVE') onLeave += r.count;
+      else if (s === 'HALF_DAY') halfDay += r.count;
     }
 
     return {
       total: totalRow?.total || 0,
       present,
       absent,
-      onLeave
+      onLeave,
+      halfDay
     };
   },
 
@@ -289,10 +292,10 @@ export const db = {
     username: string;
     password?: string;
     role: string;
-    department: string;
+    department?: string;
     email: string;
     phone?: string;
-    status?: 'PRESENT' | 'ABSENT' | 'ON_LEAVE';
+    status?: 'PRESENT' | 'ABSENT' | 'ON_LEAVE' | 'HALF_DAY';
   }): Employee {
     const database = getDatabase();
     
@@ -309,8 +312,9 @@ export const db = {
     }
 
     const password = data.password || 'password123';
+    const department = data.department?.trim() || 'Operations';
     const status = data.status || 'PRESENT';
-    const checkIn = status === 'PRESENT' ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const checkIn = (status === 'PRESENT' || status === 'HALF_DAY') ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
     const stmt = database.prepare(`
       INSERT INTO employees (id, name, username, password, role, department, email, phone, status, check_in_time)
@@ -323,7 +327,7 @@ export const db = {
       data.username.trim().toLowerCase(),
       password,
       data.role,
-      data.department,
+      department,
       data.email,
       data.phone || '',
       status,
@@ -350,7 +354,7 @@ export const db = {
     if (updates.status !== undefined) { 
       fields.push('status = ?'); 
       values.push(updates.status); 
-      if (updates.status === 'PRESENT') {
+      if (updates.status === 'PRESENT' || updates.status === 'HALF_DAY') {
         fields.push('check_in_time = ?');
         values.push(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
       } else if (updates.status === 'ABSENT' || updates.status === 'ON_LEAVE') {

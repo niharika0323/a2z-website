@@ -14,7 +14,10 @@ import {
   Building, 
   Clock, 
   Layers,
-  ArrowRight
+  ArrowRight,
+  Plus,
+  Trash2,
+  X
 } from "lucide-react";
 import Link from "next/link";
 import Logo from "@/app/components/Logo";
@@ -27,7 +30,7 @@ interface Employee {
   department: string;
   email: string;
   phone: string;
-  status: "PRESENT" | "ABSENT" | "ON_LEAVE";
+  status: "PRESENT" | "ABSENT" | "ON_LEAVE" | "HALF_DAY";
   check_in_time?: string;
   check_out_time?: string;
 }
@@ -40,6 +43,21 @@ interface CompanyEvent {
   description: string;
 }
 
+export interface VerificationTask {
+  id: string;
+  task: string;
+  priority: "Urgent" | "High" | "Normal";
+  time: string;
+  status: "In Progress" | "Review" | "Verified" | "Blocked";
+}
+
+const DEFAULT_TASKS: VerificationTask[] = [
+  { id: "BGV-409", task: "Aadhaar Biometric Liveness", priority: "High", time: "SLA: 4h", status: "In Progress" },
+  { id: "BGV-118", task: "District e-Courts Cross-Match", priority: "Urgent", time: "SLA: 2h", status: "Review" },
+  { id: "BGV-882", task: "University Roll Forensic Auth", priority: "Normal", time: "SLA: 24h", status: "Verified" },
+  { id: "BGV-550", task: "EPFO Service History Integrity", priority: "Normal", time: "SLA: 12h", status: "In Progress" }
+];
+
 export default function EmployeePortal() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<Employee | null>(null);
@@ -47,6 +65,21 @@ export default function EmployeePortal() {
   const [events, setEvents] = useState<CompanyEvent[]>([]);
   const [activeTab, setActiveTab] = useState<"OVERVIEW" | "ATTENDANCE" | "CALENDAR" | "DIRECTORY">("OVERVIEW");
   const [notification, setNotification] = useState<string | null>(null);
+
+  // Employee Task Management State
+  const [tasks, setTasks] = useState<VerificationTask[]>(DEFAULT_TASKS);
+  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [newTask, setNewTask] = useState<{
+    task: string;
+    priority: "Urgent" | "High" | "Normal";
+    time: string;
+    status: "In Progress" | "Review" | "Verified" | "Blocked";
+  }>({
+    task: "",
+    priority: "High",
+    time: "SLA: 4h",
+    status: "In Progress"
+  });
 
   useEffect(() => {
     const stored = localStorage.getItem("a2z_user");
@@ -63,9 +96,52 @@ export default function EmployeePortal() {
       router.push("/login");
     }
 
+    // Load saved tasks from localStorage
+    const savedTasks = localStorage.getItem("a2z_employee_tasks");
+    if (savedTasks) {
+      try {
+        setTasks(JSON.parse(savedTasks));
+      } catch (e) {}
+    }
+
     fetchDirectory();
     fetchEvents();
   }, [router]);
+
+  const saveTasks = (newTasks: VerificationTask[]) => {
+    setTasks(newTasks);
+    localStorage.setItem("a2z_employee_tasks", JSON.stringify(newTasks));
+  };
+
+  const handleAddTask = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTask.task.trim()) return;
+    const id = `BGV-${Math.floor(100 + Math.random() * 900)}`;
+    const created: VerificationTask = {
+      id,
+      task: newTask.task.trim(),
+      priority: newTask.priority,
+      time: newTask.time.trim() || "SLA: 4h",
+      status: newTask.status
+    };
+    const updated = [created, ...tasks];
+    saveTasks(updated);
+    setNewTask({ task: "", priority: "High", time: "SLA: 4h", status: "In Progress" });
+    setShowAddTaskModal(false);
+    showToast(`Task ${id} added successfully!`);
+  };
+
+  const handleUpdateTaskStatus = (taskId: string, status: VerificationTask["status"]) => {
+    const updated = tasks.map(t => t.id === taskId ? { ...t, status } : t);
+    saveTasks(updated);
+    showToast(`Task status updated to "${status}"`);
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    const updated = tasks.filter(t => t.id !== taskId);
+    saveTasks(updated);
+    showToast("Task removed from queue");
+  };
 
   const showToast = (msg: string) => {
     setNotification(msg);
@@ -117,18 +193,18 @@ export default function EmployeePortal() {
     router.push("/login");
   };
 
-  const handleAttendancePunch = async (action: "CHECK_IN" | "CHECK_OUT" | "ON_LEAVE") => {
+  const handleAttendancePunch = async (action: "PUNCH_IN" | "PUNCH_OUT" | "HALF_DAY") => {
     if (!currentUser) return;
 
     const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     let updates: Partial<Employee> = {};
 
-    if (action === "CHECK_IN") {
+    if (action === "PUNCH_IN") {
       updates = { status: "PRESENT", check_in_time: nowTime };
-    } else if (action === "CHECK_OUT") {
+    } else if (action === "PUNCH_OUT") {
       updates = { check_out_time: nowTime };
-    } else if (action === "ON_LEAVE") {
-      updates = { status: "ON_LEAVE" };
+    } else if (action === "HALF_DAY") {
+      updates = { status: "HALF_DAY", check_in_time: nowTime };
     }
 
     try {
@@ -144,8 +220,8 @@ export default function EmployeePortal() {
         setCurrentUser(updated);
         localStorage.setItem("a2z_user", JSON.stringify(updated));
         showToast(
-          action === "CHECK_IN" ? "Clock-In recorded!" :
-          action === "CHECK_OUT" ? "Clock-Out recorded!" : "Leave marked!"
+          action === "PUNCH_IN" ? `Punched In recorded at ${nowTime}!` :
+          action === "PUNCH_OUT" ? `Punched Out recorded at ${nowTime}!` : `Half Day logged at ${nowTime}!`
         );
       }
     } catch (err) {
@@ -297,13 +373,18 @@ export default function EmployeePortal() {
                     <CheckCircle2 size={13} /> PRESENT {currentUser.check_in_time ? `(${currentUser.check_in_time})` : ''}
                   </span>
                 )}
+                {currentUser.status === "HALF_DAY" && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: '#fff3cd', color: '#856404', padding: '0.22rem 0.65rem', borderRadius: '14px', fontWeight: 800, fontSize: '0.72rem' }}>
+                    <Clock3 size={13} /> HALF DAY {currentUser.check_in_time ? `(${currentUser.check_in_time})` : ''}
+                  </span>
+                )}
                 {currentUser.status === "ABSENT" && (
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: '#f8d7da', color: '#721c24', padding: '0.22rem 0.65rem', borderRadius: '14px', fontWeight: 800, fontSize: '0.72rem' }}>
                     <XCircle size={13} /> ABSENT
                   </span>
                 )}
                 {currentUser.status === "ON_LEAVE" && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: '#fff3cd', color: '#856404', padding: '0.22rem 0.65rem', borderRadius: '14px', fontWeight: 800, fontSize: '0.72rem' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: '#fce4ec', color: '#c2185b', padding: '0.22rem 0.65rem', borderRadius: '14px', fontWeight: 800, fontSize: '0.72rem' }}>
                     <Clock3 size={13} /> ON LEAVE
                   </span>
                 )}
@@ -340,48 +421,99 @@ export default function EmployeePortal() {
           ))}
         </div>
 
-        {/* TAB 1: OVERVIEW & BGV INTERNAL QUEUE (Small Cards) */}
+        {/* TAB 1: OVERVIEW & BGV INTERNAL QUEUE (With Add Task & Status Switcher) */}
         {activeTab === "OVERVIEW" && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.9rem' }}>
             
             {/* Small Assigned BGV Queue Card */}
             <div className="glass-card" style={{ padding: '0.9rem 1rem', background: 'rgba(255,255,255,0.8)', borderRadius: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.7rem' }}>
-                <ShieldCheck color="var(--lilac-dark)" size={16} />
-                <h3 style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                  Assigned Verification Queue
-                </h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.7rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <ShieldCheck color="var(--lilac-dark)" size={16} />
+                  <h3 style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                    Assigned Tasks Queue ({tasks.length})
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowAddTaskModal(true)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.3rem',
+                    padding: '0.3rem 0.65rem',
+                    borderRadius: '6px',
+                    background: 'var(--lilac-dark)',
+                    color: '#fff',
+                    border: 'none',
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(122, 91, 156, 0.25)'
+                  }}
+                >
+                  <Plus size={12} /> Add Task
+                </button>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                {[
-                  { id: "BGV-409", task: "Aadhaar Biometric Liveness", priority: "High", time: "SLA: 4h", status: "In Progress" },
-                  { id: "BGV-118", task: "District e-Courts Cross-Match", priority: "Urgent", time: "SLA: 2h", status: "Review" },
-                  { id: "BGV-882", task: "University Roll Forensic Auth", priority: "Normal", time: "SLA: 24h", status: "Verified" },
-                  { id: "BGV-550", task: "EPFO Service History Integrity", priority: "Normal", time: "SLA: 12h", status: "In Progress" }
-                ].map((item, idx) => (
-                  <div key={idx} style={{ padding: '0.5rem 0.7rem', background: '#fff', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
+                {tasks.map((item) => (
+                  <div key={item.id} style={{ padding: '0.5rem 0.7rem', background: '#fff', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ flex: '1 1 auto', minWidth: 0, marginRight: '0.5rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                         <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--lilac-dark)' }}>{item.id}</span>
-                        <span style={{ fontWeight: 700, fontSize: '0.74rem', color: 'var(--text-primary)' }}>{item.task}</span>
+                        <span style={{ fontWeight: 700, fontSize: '0.74rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.task}</span>
                       </div>
                       <div style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
-                        {item.time} • Priority: <strong>{item.priority}</strong>
+                        {item.time} • Priority: <strong style={{ color: item.priority === 'Urgent' ? '#dc3545' : item.priority === 'High' ? '#e67e22' : 'inherit' }}>{item.priority}</strong>
                       </div>
                     </div>
-                    <span style={{ 
-                      fontSize: '0.62rem', 
-                      fontWeight: 700, 
-                      padding: '0.15rem 0.45rem', 
-                      borderRadius: '8px',
-                      background: item.status === "Verified" ? '#d4edda' : '#f0ebf7',
-                      color: item.status === "Verified" ? '#155724' : 'var(--lilac-dark)'
-                    }}>
-                      {item.status}
-                    </span>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+                      {/* Interactive Status Selector */}
+                      <select
+                        value={item.status}
+                        onChange={(e) => handleUpdateTaskStatus(item.id, e.target.value as any)}
+                        style={{
+                          fontSize: '0.66rem',
+                          fontWeight: 700,
+                          padding: '0.2rem 0.4rem',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(0,0,0,0.12)',
+                          cursor: 'pointer',
+                          outline: 'none',
+                          background:
+                            item.status === "Verified" ? '#d4edda' :
+                            item.status === "Review" ? '#e8daef' :
+                            item.status === "Blocked" ? '#f8d7da' : '#eaf2f8',
+                          color:
+                            item.status === "Verified" ? '#155724' :
+                            item.status === "Review" ? '#5b2c6f' :
+                            item.status === "Blocked" ? '#721c24' : '#1b4f72'
+                        }}
+                      >
+                        <option value="In Progress">In Progress</option>
+                        <option value="Review">Under Review</option>
+                        <option value="Verified">Verified / Done</option>
+                        <option value="Blocked">Blocked</option>
+                      </select>
+
+                      {/* Delete Task */}
+                      <button
+                        onClick={() => handleDeleteTask(item.id)}
+                        title="Remove Task"
+                        style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.2rem' }}
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
                   </div>
                 ))}
+
+                {tasks.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '1.2rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                    No tasks currently assigned. Click <strong>+ Add Task</strong> above to add one!
+                  </div>
+                )}
               </div>
             </div>
 
@@ -428,7 +560,7 @@ export default function EmployeePortal() {
           </div>
         )}
 
-        {/* TAB 2: DAILY ATTENDANCE PUNCH (Small Card) */}
+        {/* TAB 2: DAILY ATTENDANCE PUNCH (Punch In, Punch Out, Half Day) */}
         {activeTab === "ATTENDANCE" && (
           <div className="glass-card" style={{ maxWidth: '480px', margin: '0 auto', padding: '1.2rem 1.4rem', textAlign: 'center', background: 'rgba(255,255,255,0.8)', borderRadius: '12px' }}>
             <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'var(--lilac-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.5rem auto' }}>
@@ -439,19 +571,19 @@ export default function EmployeePortal() {
               Daily Attendance Clock
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.72rem', marginBottom: '1.1rem' }}>
-              Punch in at start of shift, record clock-out, or submit scheduled leave.
+              Punch in at start of shift, record punch out, or mark half day.
             </p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.6rem' }}>
               
-              {/* Check In */}
+              {/* Punch In */}
               <button
-                onClick={() => handleAttendancePunch("CHECK_IN")}
+                onClick={() => handleAttendancePunch("PUNCH_IN")}
                 style={{
                   padding: '0.8rem 0.5rem',
                   borderRadius: '8px',
                   border: '1.5px solid #28a745',
-                  background: '#f4fbf6',
+                  background: currentUser.status === "PRESENT" ? '#d4edda' : '#f4fbf6',
                   cursor: 'pointer',
                   transition: 'all 0.15s',
                   display: 'flex',
@@ -461,13 +593,13 @@ export default function EmployeePortal() {
                 }}
               >
                 <CheckCircle2 color="#28a745" size={20} />
-                <div style={{ fontWeight: 800, fontSize: '0.78rem', color: '#155724' }}>Clock In</div>
+                <div style={{ fontWeight: 800, fontSize: '0.78rem', color: '#155724' }}>Punch In</div>
                 <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>Shift Start</div>
               </button>
 
-              {/* Check Out */}
+              {/* Punch Out */}
               <button
-                onClick={() => handleAttendancePunch("CHECK_OUT")}
+                onClick={() => handleAttendancePunch("PUNCH_OUT")}
                 style={{
                   padding: '0.8rem 0.5rem',
                   borderRadius: '8px',
@@ -482,18 +614,18 @@ export default function EmployeePortal() {
                 }}
               >
                 <LogOut color="var(--lilac-dark)" size={20} />
-                <div style={{ fontWeight: 800, fontSize: '0.78rem', color: 'var(--lilac-dark)' }}>Clock Out</div>
+                <div style={{ fontWeight: 800, fontSize: '0.78rem', color: 'var(--lilac-dark)' }}>Punch Out</div>
                 <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>Shift End</div>
               </button>
 
-              {/* Apply Leave */}
+              {/* Half Day */}
               <button
-                onClick={() => handleAttendancePunch("ON_LEAVE")}
+                onClick={() => handleAttendancePunch("HALF_DAY")}
                 style={{
                   padding: '0.8rem 0.5rem',
                   borderRadius: '8px',
                   border: '1.5px solid #ffc107',
-                  background: '#fffdf5',
+                  background: currentUser.status === "HALF_DAY" ? '#fff3cd' : '#fffdf5',
                   cursor: 'pointer',
                   transition: 'all 0.15s',
                   display: 'flex',
@@ -503,8 +635,8 @@ export default function EmployeePortal() {
                 }}
               >
                 <Clock3 color="#b58105" size={20} />
-                <div style={{ fontWeight: 800, fontSize: '0.78rem', color: '#856404' }}>Leave</div>
-                <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>Mark Off</div>
+                <div style={{ fontWeight: 800, fontSize: '0.78rem', color: '#856404' }}>Half Day</div>
+                <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>Half Shift</div>
               </button>
 
             </div>
@@ -588,6 +720,128 @@ export default function EmployeePortal() {
         )}
 
       </div>
+
+      {/* Add Task Modal */}
+      <AnimatePresence>
+        {showAddTaskModal && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.45)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem'
+          }}>
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="glass-card"
+              style={{
+                background: '#ffffff',
+                width: '100%',
+                maxWidth: '420px',
+                padding: '1.4rem 1.6rem',
+                borderRadius: '16px',
+                boxShadow: '0 20px 40px rgba(0,0,0,0.15)'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                  + Add New Task
+                </h3>
+                <button 
+                  onClick={() => setShowAddTaskModal(false)}
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddTask} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                    Task Title / Check Description *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Court Criminal Registry Scan"
+                    value={newTask.task}
+                    onChange={e => setNewTask({ ...newTask, task: e.target.value })}
+                    style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                      Priority
+                    </label>
+                    <select
+                      value={newTask.priority}
+                      onChange={e => setNewTask({ ...newTask, priority: e.target.value as any })}
+                      style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
+                    >
+                      <option value="Urgent">🔴 Urgent</option>
+                      <option value="High">🟠 High</option>
+                      <option value="Normal">🟢 Normal</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                      Target SLA
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. SLA: 4h"
+                      value={newTask.time}
+                      onChange={e => setNewTask({ ...newTask, time: e.target.value })}
+                      style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                    Initial Status
+                  </label>
+                  <select
+                    value={newTask.status}
+                    onChange={e => setNewTask({ ...newTask, status: e.target.value as any })}
+                    style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
+                  >
+                    <option value="In Progress">🔵 In Progress</option>
+                    <option value="Review">🟣 Under Review</option>
+                    <option value="Verified">🟢 Verified / Done</option>
+                    <option value="Blocked">🔴 Blocked</option>
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.8rem', marginTop: '0.6rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddTaskModal(false)}
+                    style={{ padding: '0.55rem 1rem', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)', background: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: '0.76rem' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    style={{ padding: '0.55rem 1.2rem', fontSize: '0.78rem' }}
+                  >
+                    Add Task
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
