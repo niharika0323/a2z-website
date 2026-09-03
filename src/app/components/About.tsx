@@ -10,7 +10,7 @@ export default function About() {
         
         {/* Headings positioned above the columns */}
         <div style={{ marginBottom: '2rem' }}>
-          <div style={{ display: 'inline-block', padding: '0.4rem 1.2rem', backgroundColor: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '50px', color: 'var(--lilac-dark)', fontWeight: 700, marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+          <div style={{ display: 'inline-block', padding: '0.4rem 1.2rem', backgroundColor: 'rgba(16, 24, 40, 0.75)', border: '1px solid rgba(56, 189, 248, 0.4)', borderRadius: '50px', color: '#38bdf8', fontWeight: 800, marginBottom: '1.5rem', fontSize: '0.82rem', letterSpacing: '1px' }}>
             WHO WE ARE
           </div>
           <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
@@ -87,7 +87,7 @@ export default function About() {
           </p>
         </div>
         
-        <div style={{ width: '1px', background: 'rgba(0,0,0,0.1)', display: 'block' }}></div>
+        <div style={{ width: '1px', background: 'rgba(255,255,255,0.12)', display: 'block' }}></div>
 
         <div style={{ flex: '1 1 300px' }}>
           <h3 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-primary)' }}>Our Vision</h3>
