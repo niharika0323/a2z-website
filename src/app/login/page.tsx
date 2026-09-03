@@ -102,49 +102,50 @@ export default function LoginPage() {
         </Link>
       </div>
 
-      {/* Transparent Dark Glassmorphism Login Card */}
+      {/* Transparent Dark Glassmorphism Login Card (Compact) */}
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         style={{ 
           width: '100%', 
-          maxWidth: '460px', 
-          padding: '2.8rem 2.4rem',
+          maxWidth: '380px', 
+          padding: '2rem 1.8rem',
           background: 'rgba(16, 24, 40, 0.72)',
           backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
           border: '1px solid rgba(56, 189, 248, 0.35)',
-          borderRadius: '24px',
+          borderRadius: '20px',
           boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(0, 245, 212, 0.12)',
           boxSizing: 'border-box'
         }}
       >
         {/* Brand & Security Header */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{ marginBottom: '1.2rem', display: 'flex', justifyContent: 'center' }}>
-            <Logo size="md" showTagline={true} />
+        <div style={{ textAlign: 'center', marginBottom: '1.4rem' }}>
+          <div style={{ marginBottom: '0.9rem', display: 'flex', justifyContent: 'center' }}>
+            <Logo size="sm" showTagline={true} />
           </div>
 
           <div style={{ 
             display: 'inline-block', 
-            padding: '0.35rem 0.95rem', 
+            padding: '0.25rem 0.75rem', 
             background: 'rgba(56, 189, 248, 0.12)', 
-            border: '1px solid rgba(56, 189, 248, 0.3)',
+            border: '1px solid rgba(56, 189, 248, 0.3)', 
             borderRadius: '20px', 
             color: '#38bdf8', 
-            fontSize: '0.74rem', 
+            fontSize: '0.68rem', 
             fontWeight: 800, 
             letterSpacing: '1px',
             textTransform: 'uppercase', 
-            marginBottom: '0.8rem'
+            marginBottom: '0.6rem'
           }}>
             Authorized Personnel Portal
           </div>
 
-          <h2 style={{ fontSize: '1.85rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', margin: '0 0 0.4rem 0' }}>
+          <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', margin: '0 0 0.25rem 0' }}>
             Unified Corporate Login
           </h2>
-          <p style={{ color: '#94a3b8', fontSize: '0.88rem', margin: 0, lineHeight: 1.5 }}>
+          <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: 0, lineHeight: 1.4 }}>
             Access your role-specific dashboard (Admin or Employee)
           </p>
         </div>
@@ -157,29 +158,29 @@ export default function LoginPage() {
             style={{ 
               display: 'flex', 
               alignItems: 'center', 
-              gap: '0.6rem', 
+              gap: '0.5rem', 
               background: 'rgba(239, 68, 68, 0.15)', 
               border: '1px solid rgba(239, 68, 68, 0.4)', 
               color: '#f87171', 
-              padding: '0.8rem 1rem', 
-              borderRadius: '10px', 
-              fontSize: '0.85rem', 
-              marginBottom: '1.5rem' 
+              padding: '0.65rem 0.85rem', 
+              borderRadius: '8px', 
+              fontSize: '0.8rem', 
+              marginBottom: '1.1rem' 
             }}
           >
-            <AlertCircle size={18} style={{ flexShrink: 0 }} />
+            <AlertCircle size={16} style={{ flexShrink: 0 }} />
             <span>{error}</span>
           </motion.div>
         )}
 
         {/* Login Form */}
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.45rem', fontSize: '0.84rem', fontWeight: 700, color: '#e2e8f0' }}>
+            <label style={{ display: 'block', marginBottom: '0.35rem', fontSize: '0.78rem', fontWeight: 700, color: '#e2e8f0' }}>
               Username or Corporate Email
             </label>
             <div style={{ position: 'relative' }}>
-              <User size={18} color="#00f5d4" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '1rem' }} />
+              <User size={16} color="#00f5d4" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '0.85rem' }} />
               <input 
                 type="text" 
                 value={username}
@@ -187,12 +188,12 @@ export default function LoginPage() {
                 onChange={(e) => setUsername(e.target.value)}
                 style={{ 
                   width: '100%', 
-                  padding: '0.85rem 1rem 0.85rem 2.8rem', 
-                  borderRadius: '12px', 
+                  padding: '0.7rem 0.85rem 0.7rem 2.4rem', 
+                  borderRadius: '10px', 
                   border: '1px solid rgba(56, 189, 248, 0.25)', 
                   background: 'rgba(7, 10, 16, 0.65)', 
                   color: '#ffffff', 
-                  fontSize: '0.92rem',
+                  fontSize: '0.86rem',
                   outline: 'none',
                   boxSizing: 'border-box',
                   transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
@@ -210,11 +211,11 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label style={{ display: 'block', marginBottom: '0.45rem', fontSize: '0.84rem', fontWeight: 700, color: '#e2e8f0' }}>
+            <label style={{ display: 'block', marginBottom: '0.35rem', fontSize: '0.78rem', fontWeight: 700, color: '#e2e8f0' }}>
               Security Password
             </label>
             <div style={{ position: 'relative' }}>
-              <KeyRound size={18} color="#00f5d4" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '1rem' }} />
+              <KeyRound size={16} color="#00f5d4" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '0.85rem' }} />
               <input 
                 type="password" 
                 value={password}
@@ -222,12 +223,12 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 style={{ 
                   width: '100%', 
-                  padding: '0.85rem 1rem 0.85rem 2.8rem', 
-                  borderRadius: '12px', 
+                  padding: '0.7rem 0.85rem 0.7rem 2.4rem', 
+                  borderRadius: '10px', 
                   border: '1px solid rgba(56, 189, 248, 0.25)', 
                   background: 'rgba(7, 10, 16, 0.65)', 
                   color: '#ffffff', 
-                  fontSize: '0.92rem',
+                  fontSize: '0.86rem',
                   outline: 'none',
                   boxSizing: 'border-box',
                   transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
@@ -251,18 +252,18 @@ export default function LoginPage() {
             whileTap={{ scale: 0.98 }}
             style={{ 
               width: '100%', 
-              padding: '0.95rem', 
-              marginTop: '0.8rem', 
-              fontSize: '0.95rem',
+              padding: '0.75rem 1rem', 
+              marginTop: '0.5rem', 
+              fontSize: '0.88rem',
               fontWeight: 800,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0.5rem',
+              gap: '0.45rem',
               background: 'linear-gradient(135deg, #00f5d4 0%, #0284c7 100%)',
               color: '#070a10',
               border: 'none',
-              borderRadius: '12px',
+              borderRadius: '10px',
               cursor: 'pointer',
               boxShadow: '0 4px 20px rgba(0, 245, 212, 0.35)',
               opacity: loading ? 0.7 : 1,
@@ -271,7 +272,7 @@ export default function LoginPage() {
           >
             {loading ? "Authenticating..." : (
               <>
-                Sign In to Dashboard <ArrowRight size={18} />
+                Sign In to Dashboard <ArrowRight size={16} />
               </>
             )}
           </motion.button>
