@@ -446,7 +446,6 @@ export default function AdminDashboard() {
         padding: '1.2rem 3rem',
         
         background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(56, 189, 248, 0.2)',
-        backdropFilter: 'blur(20px)',
         position: 'sticky',
         top: 0,
         zIndex: 50
@@ -552,7 +551,6 @@ export default function AdminDashboard() {
                   gap: '0.35rem',
                   padding: '0.4rem 0.8rem',
                   borderRadius: '6px',
-                  border: '1px solid rgba(0,0,0,0.1)',
                   background: 'rgba(16, 24, 40, 0.85)',
                   border: '1px solid rgba(56, 189, 248, 0.3)',
                   color: '#ffffff',
@@ -764,7 +762,7 @@ export default function AdminDashboard() {
                     const isRootAdmin = emp.id === "ADM-001";
                     return (
                       <tr key={emp.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', fontSize: '0.76rem', transition: 'background 0.2s' }}>
-                        <td style={{ padding: '0.5rem 0.6rem', fontWeight: 800, color: '#00f5d4', fontWeight: 800 }}>
+                        <td style={{ padding: '0.5rem 0.6rem', fontWeight: 800, color: '#00f5d4' }}>
                           {emp.id}
                         </td>
                         <td style={{ padding: '0.5rem 0.6rem' }}>
@@ -1245,7 +1243,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Task Filter & Search Bar */}
-            <div className="glass-card" style={{ padding: '0.7rem 1rem', marginBottom: '1rem', display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)' }}>
+            <div className="glass-card" style={{ padding: '0.7rem 1rem', marginBottom: '1rem', display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.04)' }}>
               <div style={{ flex: '1 1 220px', position: 'relative' }}>
                 <Search size={14} color="#0284c7" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '0.8rem' }} />
                 <input
@@ -1311,7 +1309,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Tasks Table */}
-            <div className="glass-card" style={{ padding: '1.1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', overflowX: 'auto', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.06)' }}>
+            <div className="glass-card" style={{ padding: '1.1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', overflowX: 'auto', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
                   Tasks Roster ({filteredTasks.length})
@@ -1402,7 +1400,6 @@ export default function AdminDashboard() {
                             style={{
                               padding: '0.3rem 0.6rem',
                               borderRadius: '8px',
-                              border: '1.5px solid rgba(2, 132, 199, 0.35)',
                               fontSize: '0.72rem',
                               fontWeight: 700,
                               background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)',

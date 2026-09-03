@@ -489,7 +489,7 @@ export default function EmployeePortal() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
 
             {/* Assigned Tasks Queue Card */}
-            <div className="glass-card" style={{ padding: '1.2rem 1.3rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)', borderRadius: '16px', border: '1px solid rgba(56, 189, 248, 0.25)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
+            <div className="glass-card" style={{ padding: '1.2rem 1.3rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderRadius: '16px', border: '1px solid rgba(56, 189, 248, 0.25)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <ShieldCheck color="#0284c7" size={18} />
@@ -509,7 +509,6 @@ export default function EmployeePortal() {
                     color: '#070a10', fontWeight: 800,
                     border: 'none',
                     fontSize: '0.72rem',
-                    fontWeight: 700,
                     cursor: 'pointer',
                     boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)'
                   }}
@@ -544,7 +543,6 @@ export default function EmployeePortal() {
                           border: '1px solid rgba(56, 189, 248, 0.25)',
                           cursor: 'pointer',
                           outline: 'none',
-                          background: 'rgba(7, 10, 16, 0.85)',
                           background:
                             item.status === "Verified" ? 'rgba(0, 245, 212, 0.15)' :
                               item.status === "Review" ? 'rgba(168, 85, 247, 0.15)' :
@@ -583,7 +581,7 @@ export default function EmployeePortal() {
 
             {/* Quick Actions Card */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-              <div className="glass-card" style={{ padding: '1.2rem 1.3rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)', borderRadius: '16px', border: '1px solid rgba(56, 189, 248, 0.25)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
+              <div className="glass-card" style={{ padding: '1.2rem 1.3rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderRadius: '16px', border: '1px solid rgba(56, 189, 248, 0.25)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
                 <h3 style={{ fontSize: '0.96rem', fontWeight: 800, color: '#ffffff', margin: '0 0 0.8rem 0' }}>
                   Quick Actions
                 </h3>
@@ -741,7 +739,7 @@ export default function EmployeePortal() {
 
         {/* TAB 3: COMPANY CALENDAR & HOLIDAYS (Small Cards) */}
         {activeTab === "CALENDAR" && (
-          <div className="glass-card" style={{ padding: '1rem 1.1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px' }}>
+          <div className="glass-card" style={{ padding: '1rem 1.1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.9rem' }}>
               <Calendar color="#38bdf8" size={16} />
               <div>
@@ -753,7 +751,7 @@ export default function EmployeePortal() {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '0.65rem' }}>
               {events.map(ev => (
-                <div key={ev.id} style={{ background: 'rgba(7, 10, 16, 0.65)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '0.65rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)' }}>
+                <div key={ev.id} style={{ background: 'rgba(7, 10, 16, 0.65)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '0.65rem 0.8rem', borderRadius: '8px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ fontWeight: 800, fontSize: '0.78rem', color: '#ffffff' }}>{ev.title}</div>
                     <span style={{ fontSize: '0.6rem', fontWeight: 700, padding: '0.1rem 0.4rem', borderRadius: '10px', background: 'var(--lilac-light)', color: '#38bdf8' }}>
@@ -776,7 +774,7 @@ export default function EmployeePortal() {
 
         {/* TAB 4: STAFF DIRECTORY (Small Table Card) */}
         {activeTab === "DIRECTORY" && (
-          <div className="glass-card" style={{ padding: '1rem 1.1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', overflowX: 'auto' }}>
+          <div className="glass-card" style={{ padding: '1rem 1.1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', overflowX: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.9rem' }}>
               <Building color="#38bdf8" size={16} />
               <div>
@@ -833,7 +831,7 @@ export default function EmployeePortal() {
               exit={{ scale: 0.95, opacity: 0 }}
               className="glass-card"
               style={{
-                background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)',
+                background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)',
                 width: '100%',
                 maxWidth: '420px',
                 padding: '1.4rem 1.6rem',
@@ -864,7 +862,7 @@ export default function EmployeePortal() {
                     placeholder="e.g. Next.js API Architecture Sprint"
                     value={newTask.task}
                     onChange={e => setNewTask({ ...newTask, task: e.target.value })}
-                    style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(7, 10, 16, 0.75)', color: '#ffffff', borderRadius: '8px', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(7, 10, 16, 0.75)', color: '#ffffff', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
                   />
                 </div>
 
@@ -876,7 +874,7 @@ export default function EmployeePortal() {
                     <select
                       value={newTask.priority}
                       onChange={e => setNewTask({ ...newTask, priority: e.target.value as any })}
-                      style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(7, 10, 16, 0.75)', color: '#ffffff', borderRadius: '8px', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
+                      style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(7, 10, 16, 0.75)', color: '#ffffff', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
                     >
                       <option value="Urgent">🔴 Urgent</option>
                       <option value="High">🟠 High</option>
@@ -892,7 +890,7 @@ export default function EmployeePortal() {
                       placeholder="e.g. SLA: 4h"
                       value={newTask.time}
                       onChange={e => setNewTask({ ...newTask, time: e.target.value })}
-                      style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(7, 10, 16, 0.75)', color: '#ffffff', borderRadius: '8px', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
+                      style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(7, 10, 16, 0.75)', color: '#ffffff', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
                     />
                   </div>
                 </div>
@@ -904,7 +902,7 @@ export default function EmployeePortal() {
                   <select
                     value={newTask.status}
                     onChange={e => setNewTask({ ...newTask, status: e.target.value as any })}
-                    style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(7, 10, 16, 0.75)', color: '#ffffff', borderRadius: '8px', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(7, 10, 16, 0.75)', color: '#ffffff', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
                   >
                     <option value="In Progress">🔵 In Progress</option>
                     <option value="Review">🟣 Under Review</option>
@@ -917,7 +915,7 @@ export default function EmployeePortal() {
                   <button
                     type="button"
                     onClick={() => setShowAddTaskModal(false)}
-                    style={{ padding: '0.55rem 1rem', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)', background: 'rgba(7, 10, 16, 0.65)', border: '1px solid rgba(56, 189, 248, 0.25)', cursor: 'pointer', fontWeight: 600, fontSize: '0.76rem' }}
+                    style={{ padding: '0.55rem 1rem', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)', background: 'rgba(7, 10, 16, 0.65)', cursor: 'pointer', fontWeight: 600, fontSize: '0.76rem' }}
                   >
                     Cancel
                   </button>
