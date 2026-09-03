@@ -209,14 +209,14 @@ function initializeSchema(db: DatabaseSync) {
     `);
 
     insertEvent.run('EVT-101', 'Gandhi Jayanti', '2026-10-02', 'Holiday', 'National Holiday - Corporate offices closed');
-    insertEvent.run('EVT-102', 'Q3 ISO 27001 & BGV Security Audit', '2026-10-15', 'Audit', 'Annual external audit for background verification data handling');
+    insertEvent.run('EVT-102', 'Q3 Cloud Architecture & Security Audit', '2026-10-15', 'Audit', 'Annual external audit for web & application infrastructure security');
     insertEvent.run('EVT-103', 'Dussehra Festival', '2026-10-24', 'Holiday', 'National Festival Holiday');
-    insertEvent.run('EVT-104', 'Enterprise BGV 3.0 Platform Rollout', '2026-11-05', 'Milestone', 'Launch of automated court record AI parser & instant Aadhaar OCR');
+    insertEvent.run('EVT-104', 'A2Z Enterprise App Framework 3.0 Rollout', '2026-11-05', 'Milestone', 'Launch of high-performance microservices architecture & mobile SDK');
     insertEvent.run('EVT-105', 'Diwali Celebration & Holiday', '2026-11-12', 'Holiday', 'Festival of Lights company celebration');
     insertEvent.run('EVT-106', 'Christmas Day', '2026-12-25', 'Holiday', 'Winter corporate holiday');
   }
 
-  // Pre-seed verification tasks if empty
+  // Pre-seed development tasks if empty or remove legacy BGV tasks
   const tasksCountRow = db.prepare('SELECT COUNT(*) as count FROM verification_tasks').get() as { count: number };
   if (tasksCountRow.count === 0) {
     const insertTask = db.prepare(`
@@ -224,10 +224,26 @@ function initializeSchema(db: DatabaseSync) {
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
 
-    insertTask.run('BGV-409', 'Aadhaar Biometric Liveness Scan', 'EMP-101', 'Alok Kumar', 'High', 'SLA: 4h', 'In Progress');
-    insertTask.run('BGV-118', 'District e-Courts Cross-Match', 'EMP-102', 'Priya Sharma', 'Urgent', 'SLA: 2h', 'Review');
-    insertTask.run('BGV-882', 'University Roll Forensic Auth', 'EMP-103', 'Rahul Verma', 'Normal', 'SLA: 24h', 'Verified');
-    insertTask.run('BGV-550', 'EPFO Service History Integrity', 'EMP-104', 'Sneha Patel', 'Normal', 'SLA: 12h', 'In Progress');
+    insertTask.run('TSK-101', 'Next.js Frontend Architecture & UI Sprint', 'EMP-101', 'Alok Kumar', 'High', 'SLA: 4h', 'In Progress');
+    insertTask.run('TSK-102', 'REST API Gateway & Payment SDK Integration', 'EMP-102', 'Priya Sharma', 'Urgent', 'SLA: 2h', 'Review');
+    insertTask.run('TSK-103', 'Mobile App Push Notifications & Offline Sync', 'EMP-103', 'Rahul Verma', 'Normal', 'SLA: 24h', 'Verified');
+    insertTask.run('TSK-104', 'Cloud Database Migration & Query Indexing', 'EMP-104', 'Sneha Patel', 'Normal', 'SLA: 12h', 'In Progress');
+  } else {
+    // Clean up any legacy BGV tasks if they exist
+    try {
+      db.prepare(`DELETE FROM verification_tasks WHERE id LIKE 'BGV%'`).run();
+      const currentCount = db.prepare('SELECT COUNT(*) as count FROM verification_tasks').get() as { count: number };
+      if (currentCount.count === 0) {
+        const insertTask = db.prepare(`
+          INSERT INTO verification_tasks (id, title, assigned_to, employee_name, priority, time, status)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `);
+        insertTask.run('TSK-101', 'Next.js Frontend Architecture & UI Sprint', 'EMP-101', 'Alok Kumar', 'High', 'SLA: 4h', 'In Progress');
+        insertTask.run('TSK-102', 'REST API Gateway & Payment SDK Integration', 'EMP-102', 'Priya Sharma', 'Urgent', 'SLA: 2h', 'Review');
+        insertTask.run('TSK-103', 'Mobile App Push Notifications & Offline Sync', 'EMP-103', 'Rahul Verma', 'Normal', 'SLA: 24h', 'Verified');
+        insertTask.run('TSK-104', 'Cloud Database Migration & Query Indexing', 'EMP-104', 'Sneha Patel', 'Normal', 'SLA: 12h', 'In Progress');
+      }
+    } catch (e) {}
   }
 }
 
@@ -296,6 +312,11 @@ export const db = {
   getEmployeeByUsername(username: string): Employee | undefined {
     const database = getDatabase();
     return database.prepare('SELECT * FROM employees WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)').get(username, username) as Employee | undefined;
+  },
+
+  getEmployeeByEmail(email: string): Employee | undefined {
+    const database = getDatabase();
+    return database.prepare('SELECT * FROM employees WHERE LOWER(email) = LOWER(?)').get(email) as Employee | undefined;
   },
 
   getAttendanceStats() {
@@ -494,7 +515,7 @@ export const db = {
     status?: 'In Progress' | 'Review' | 'Verified' | 'Blocked';
   }): VerificationTask {
     const database = getDatabase();
-    const id = data.id?.trim() || `BGV-${Math.floor(100 + Math.random() * 900)}`;
+    const id = data.id?.trim() && !data.id.startsWith('BGV-') ? data.id.trim() : `TSK-${Math.floor(100 + Math.random() * 900)}`;
     const priority = data.priority || 'Normal';
     const time = data.time || 'SLA: 4h';
     const status = data.status || 'In Progress';

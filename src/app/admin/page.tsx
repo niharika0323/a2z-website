@@ -93,6 +93,7 @@ export default function AdminDashboard() {
 
   // Modals
   const [showAddEmpModal, setShowAddEmpModal] = useState(false);
+  const [empModalError, setEmpModalError] = useState("");
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
@@ -103,7 +104,7 @@ export default function AdminDashboard() {
     username: "",
     password: "",
     role: "",
-    department: "Verification Ops",
+    department: "Security & Verification Ops",
     email: "",
     phone: "",
     status: "PRESENT" as "PRESENT" | "ABSENT" | "ON_LEAVE"
@@ -240,7 +241,9 @@ export default function AdminDashboard() {
   // Create Employee
   const handleCreateEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
+    setEmpModalError("");
     if (!newEmp.name || !newEmp.username || !newEmp.role || !newEmp.email) {
+      setEmpModalError("Please fill all required fields");
       showNotification("Please fill all required fields", "error");
       return;
     }
@@ -255,6 +258,7 @@ export default function AdminDashboard() {
 
       if (res.ok) {
         setShowAddEmpModal(false);
+        setEmpModalError("");
         setEmployees(prev => [...prev, data.employee]);
         if (data.stats) setStats(data.stats);
         setNewEmp({
@@ -263,16 +267,19 @@ export default function AdminDashboard() {
           username: "",
           password: "",
           role: "",
-          department: "Verification Ops",
+          department: "Security & Verification Ops",
           email: "",
           phone: "",
           status: "PRESENT"
         });
         showNotification(`Employee ${data.employee.name} created successfully!`);
       } else {
-        showNotification(data.error || "Failed to create employee", "error");
+        const errMsg = data.error || "User already exists with this email or employee ID";
+        setEmpModalError(errMsg);
+        showNotification(errMsg, "error");
       }
     } catch (err) {
+      setEmpModalError("Error creating employee. Please check connection.");
       showNotification("Error creating employee", "error");
     }
   };
@@ -381,7 +388,7 @@ export default function AdminDashboard() {
   const filteredEmployees = useMemo(() => {
     return employees.filter(emp => {
       // Exclude admin from the employee roster list if preferred, or keep with admin badge
-      const matchesSearch = 
+      const matchesSearch =
         emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -430,15 +437,15 @@ export default function AdminDashboard() {
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: '6rem', position: 'relative', zIndex: 10 }}>
+    <div style={{ minHeight: '100vh', paddingBottom: '6rem', position: 'relative', zIndex: 10, backgroundColor: '#070a10', color: '#ffffff' }}>
       {/* Top Admin Navbar */}
-      <nav style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        padding: '1.2rem 3rem', 
-        borderBottom: '1px solid rgba(0,0,0,0.06)', 
-        background: 'rgba(255,255,255,0.6)', 
+      <nav style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '1.2rem 3rem',
+        
+        background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(56, 189, 248, 0.2)',
         backdropFilter: 'blur(20px)',
         position: 'sticky',
         top: 0,
@@ -448,12 +455,12 @@ export default function AdminDashboard() {
           <Link href="/" style={{ textDecoration: 'none' }}>
             <Logo size="sm" showTagline={false} />
           </Link>
-          <span style={{ 
-            background: 'linear-gradient(135deg, var(--lilac-dark), #9b72cf)', 
-            color: '#fff', 
-            padding: '0.25rem 0.8rem', 
-            borderRadius: '20px', 
-            fontSize: '0.75rem', 
+          <span style={{
+            background: 'linear-gradient(135deg, #38bdf8, #9b72cf)',
+            color: 'rgba(16, 24, 40, 0.85)',
+            padding: '0.25rem 0.8rem',
+            borderRadius: '20px',
+            fontSize: '0.75rem',
             fontWeight: 800,
             letterSpacing: '1px',
             textTransform: 'uppercase'
@@ -463,28 +470,30 @@ export default function AdminDashboard() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600 }}>
-            <Shield size={18} color="var(--lilac-dark)" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.9rem', color: '#ffffff', fontWeight: 600 }}>
+            <Shield size={18} color="#38bdf8" />
             <span>Root Administrator</span>
           </div>
 
-          <button 
+          <button
             onClick={handleLogout}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.4rem', 
-              background: 'rgba(255,255,255,0.8)', 
-              border: '1px solid rgba(0,0,0,0.1)', 
-              color: 'var(--text-primary)', 
-              padding: '0.5rem 1rem', 
-              borderRadius: '8px', 
-              cursor: 'pointer', 
-              fontSize: '0.85rem', 
-              fontWeight: 700 
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              background: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid rgba(239, 68, 68, 0.35)',
+              color: '#f87171',
+              padding: '0.45rem 1rem',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              boxShadow: '0 2px 10px rgba(239, 68, 68, 0.15)',
+              transition: 'all 0.2s ease'
             }}
           >
-            <LogOut size={16} /> Logout
+            <LogOut size={16} color="#f87171" /> Logout
           </button>
         </div>
       </nav>
@@ -521,21 +530,21 @@ export default function AdminDashboard() {
       </AnimatePresence>
 
       <div style={{ maxWidth: '960px', margin: '1.2rem auto 0 auto', padding: '0 1rem' }}>
-        
+
         {/* Real-Time Attendance Statistics Header (Compact) */}
         <div style={{ marginBottom: '1.2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem', flexWrap: 'wrap', gap: '0.8rem' }}>
             <div>
-              <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', margin: 0 }}>
+              <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
                 Workforce Intelligence & Attendance
               </h1>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', margin: '0.15rem 0 0 0' }}>
+              <p style={{ color: '#94a3b8', fontSize: '0.78rem', margin: '0.15rem 0 0 0' }}>
                 Real-time visibility into staff availability, employee credentials, and upcoming company calendar
               </p>
             </div>
 
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button 
+              <button
                 onClick={fetchEmployees}
                 style={{
                   display: 'flex',
@@ -544,8 +553,9 @@ export default function AdminDashboard() {
                   padding: '0.4rem 0.8rem',
                   borderRadius: '6px',
                   border: '1px solid rgba(0,0,0,0.1)',
-                  background: 'rgba(255,255,255,0.85)',
-                  color: 'var(--text-primary)',
+                  background: 'rgba(16, 24, 40, 0.85)',
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                  color: '#ffffff',
                   fontWeight: 700,
                   fontSize: '0.75rem',
                   cursor: 'pointer'
@@ -553,7 +563,7 @@ export default function AdminDashboard() {
               >
                 <RefreshCw size={13} /> Refresh
               </button>
-              <button 
+              <button
                 onClick={() => setShowAddEmpModal(true)}
                 className="btn-primary"
                 style={{
@@ -572,23 +582,23 @@ export default function AdminDashboard() {
 
           {/* 4 Attendance Counters (Compact) */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
-            
+
             {/* Total Staff */}
-            <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.75)', borderRadius: '12px' }}>
+            <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Total Employees</span>
-                <Users size={16} color="var(--lilac-dark)" />
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8' }}>Total Employees</span>
+                <Users size={16} color="#38bdf8" />
               </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.2rem' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ffffff', marginTop: '0.2rem' }}>
                 {stats.total}
               </div>
-              <div style={{ fontSize: '0.66rem', color: 'var(--text-secondary)' }}>
+              <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
                 Active in database
               </div>
             </div>
 
             {/* Present Counter */}
-            <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.75)', border: '1px solid rgba(40, 167, 69, 0.3)', borderRadius: '12px' }}>
+            <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(0, 245, 212, 0.35)', borderRadius: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#28a745' }}>🟢 Present Today</span>
                 <CheckCircle2 size={16} color="#28a745" />
@@ -596,13 +606,13 @@ export default function AdminDashboard() {
               <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#28a745', marginTop: '0.2rem' }}>
                 {stats.present}
               </div>
-              <div style={{ fontSize: '0.66rem', color: 'var(--text-secondary)' }}>
+              <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
                 {stats.total > 0 ? Math.round((stats.present / stats.total) * 100) : 0}% of workforce
               </div>
             </div>
 
             {/* Absent Counter */}
-            <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.75)', border: '1px solid rgba(220, 53, 69, 0.3)', borderRadius: '12px' }}>
+            <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(239, 68, 68, 0.35)', borderRadius: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#dc3545' }}>🔴 Absent</span>
                 <XCircle size={16} color="#dc3545" />
@@ -610,13 +620,13 @@ export default function AdminDashboard() {
               <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#dc3545', marginTop: '0.2rem' }}>
                 {stats.absent}
               </div>
-              <div style={{ fontSize: '0.66rem', color: 'var(--text-secondary)' }}>
+              <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
                 Unscheduled absence
               </div>
             </div>
 
             {/* On Leave Counter */}
-            <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255, 193, 7, 0.4)', borderRadius: '12px' }}>
+            <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(245, 158, 11, 0.35)', borderRadius: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#b58105' }}>🟡 On Leave</span>
                 <Clock3 size={16} color="#b58105" />
@@ -624,7 +634,7 @@ export default function AdminDashboard() {
               <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#b58105', marginTop: '0.2rem' }}>
                 {stats.onLeave}
               </div>
-              <div style={{ fontSize: '0.66rem', color: 'var(--text-secondary)' }}>
+              <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
                 Approved leave logged
               </div>
             </div>
@@ -632,7 +642,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Visual Progress Bar */}
-          <div style={{ marginTop: '0.8rem', background: 'rgba(0,0,0,0.06)', borderRadius: '8px', height: '6px', overflow: 'hidden', display: 'flex' }}>
+          <div style={{ marginTop: '0.8rem', background: 'rgba(255,255,255,0.1)', borderRadius: '8px', height: '6px', overflow: 'hidden', display: 'flex' }}>
             <div style={{ width: `${stats.total ? (stats.present / stats.total) * 100 : 0}%`, background: '#28a745', transition: 'width 0.5s ease' }} title={`Present: ${stats.present}`} />
             <div style={{ width: `${stats.total ? (stats.onLeave / stats.total) * 100 : 0}%`, background: '#ffc107', transition: 'width 0.5s ease' }} title={`On Leave: ${stats.onLeave}`} />
             <div style={{ width: `${stats.total ? (stats.absent / stats.total) * 100 : 0}%`, background: '#dc3545', transition: 'width 0.5s ease' }} title={`Absent: ${stats.absent}`} />
@@ -663,9 +673,9 @@ export default function AdminDashboard() {
                   fontSize: '0.78rem',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
-                  background: isActive ? 'var(--lilac-dark)' : 'rgba(255,255,255,0.65)',
-                  color: isActive ? '#ffffff' : 'var(--text-primary)',
-                  border: isActive ? 'none' : '1px solid rgba(0,0,0,0.08)',
+                  background: isActive ? 'linear-gradient(135deg, #00f5d4 0%, #0284c7 100%)' : 'rgba(16, 24, 40, 0.65)',
+                  color: isActive ? '#070a10' : '#cbd5e1',
+                  border: isActive ? 'none' : '1px solid rgba(56, 189, 248, 0.25)',
                   boxShadow: isActive ? '0 4px 12px rgba(122, 91, 156, 0.25)' : 'none'
                 }}
               >
@@ -680,9 +690,9 @@ export default function AdminDashboard() {
         {activeTab === "EMPLOYEES" && (
           <div>
             {/* Search & Filter Bar (Compact) */}
-            <div className="glass-card" style={{ padding: '0.7rem 1rem', marginBottom: '1rem', display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(255,255,255,0.75)', borderRadius: '12px' }}>
+            <div className="glass-card" style={{ padding: '0.7rem 1rem', marginBottom: '1rem', display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px' }}>
               <div style={{ flex: '1 1 220px', position: 'relative' }}>
-                <Search size={14} color="var(--lilac-dark)" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '0.8rem' }} />
+                <Search size={14} color="#38bdf8" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '0.8rem' }} />
                 <input
                   type="text"
                   placeholder="Search by name, ID, username, role or department..."
@@ -692,8 +702,9 @@ export default function AdminDashboard() {
                     width: '100%',
                     padding: '0.45rem 0.8rem 0.45rem 2.2rem',
                     borderRadius: '8px',
-                    border: '1px solid rgba(0,0,0,0.1)',
-                    background: '#fff',
+                    border: '1px solid rgba(56, 189, 248, 0.25)',
+                    background: 'rgba(7, 10, 16, 0.65)',
+                    color: '#ffffff',
                     outline: 'none',
                     fontSize: '0.78rem',
                     boxSizing: 'border-box'
@@ -703,11 +714,11 @@ export default function AdminDashboard() {
 
               {/* Status Filter */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Status:</span>
+                <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#94a3b8' }}>Status:</span>
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  style={{ padding: '0.4rem 0.7rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: '#fff', fontWeight: 600, fontSize: '0.75rem', outline: 'none' }}
+                  style={{ padding: '0.4rem 0.7rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.25)', background: 'rgba(7, 10, 16, 0.85)', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', outline: 'none' }}
                 >
                   <option value="ALL">All ({stats.total})</option>
                   <option value="PRESENT">Present ({stats.present})</option>
@@ -719,11 +730,11 @@ export default function AdminDashboard() {
 
               {/* Department Filter */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Dept:</span>
+                <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#94a3b8' }}>Dept:</span>
                 <select
                   value={deptFilter}
                   onChange={(e) => setDeptFilter(e.target.value)}
-                  style={{ padding: '0.4rem 0.7rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: '#fff', fontWeight: 600, fontSize: '0.75rem', outline: 'none' }}
+                  style={{ padding: '0.4rem 0.7rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.25)', background: 'rgba(7, 10, 16, 0.85)', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', outline: 'none' }}
                 >
                   <option value="ALL">All Departments</option>
                   {departments.map(d => (
@@ -734,10 +745,10 @@ export default function AdminDashboard() {
             </div>
 
             {/* Employee Table (Compact) */}
-            <div className="glass-card" style={{ padding: '0.9rem 1.1rem', background: 'rgba(255,255,255,0.8)', overflowX: 'auto', borderRadius: '12px' }}>
+            <div className="glass-card" style={{ padding: '0.9rem 1.1rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', overflowX: 'auto', borderRadius: '12px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1.5px solid rgba(0,0,0,0.08)', color: 'var(--text-secondary)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  <tr style={{ borderBottom: '1.5px solid rgba(56, 189, 248, 0.25)', color: '#38bdf8', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                     <th style={{ padding: '0.5rem 0.6rem' }}>ID</th>
                     <th style={{ padding: '0.5rem 0.6rem' }}>Staff Name</th>
                     <th style={{ padding: '0.5rem 0.6rem' }}>Username</th>
@@ -753,40 +764,40 @@ export default function AdminDashboard() {
                     const isRootAdmin = emp.id === "ADM-001";
                     return (
                       <tr key={emp.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', fontSize: '0.76rem', transition: 'background 0.2s' }}>
-                        <td style={{ padding: '0.5rem 0.6rem', fontWeight: 800, color: 'var(--lilac-dark)' }}>
+                        <td style={{ padding: '0.5rem 0.6rem', fontWeight: 800, color: '#00f5d4', fontWeight: 800 }}>
                           {emp.id}
                         </td>
                         <td style={{ padding: '0.5rem 0.6rem' }}>
-                          <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{emp.name}</div>
-                          <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>{emp.email}</div>
+                          <div style={{ fontWeight: 700, color: '#ffffff' }}>{emp.name}</div>
+                          <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>{emp.email}</div>
                         </td>
-                        <td style={{ padding: '0.5rem 0.6rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        <td style={{ padding: '0.5rem 0.6rem', fontWeight: 600, color: '#ffffff' }}>
                           <code>{emp.username}</code>
                         </td>
-                        <td style={{ padding: '0.5rem 0.6rem', color: 'var(--text-primary)' }}>
+                        <td style={{ padding: '0.5rem 0.6rem', color: '#ffffff' }}>
                           {emp.role}
                         </td>
-                        <td style={{ padding: '0.5rem 0.6rem', color: 'var(--text-secondary)' }}>
+                        <td style={{ padding: '0.5rem 0.6rem', color: '#94a3b8' }}>
                           {emp.department}
                         </td>
                         <td style={{ padding: '0.5rem 0.6rem' }}>
                           {emp.status === "PRESENT" && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: '#d4edda', color: '#155724', padding: '0.2rem 0.55rem', borderRadius: '14px', fontWeight: 700, fontSize: '0.7rem' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(0, 245, 212, 0.15)', color: '#00f5d4', border: '1px solid rgba(0, 245, 212, 0.35)', padding: '0.2rem 0.55rem', borderRadius: '14px', fontWeight: 700, fontSize: '0.7rem' }}>
                               <CheckCircle2 size={12} /> Present ({emp.check_in_time || 'Logged'})
                             </span>
                           )}
                           {emp.status === "HALF_DAY" && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: '#fff3cd', color: '#856404', padding: '0.2rem 0.55rem', borderRadius: '14px', fontWeight: 700, fontSize: '0.7rem' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.35)', padding: '0.2rem 0.55rem', borderRadius: '14px', fontWeight: 700, fontSize: '0.7rem' }}>
                               <Clock3 size={12} /> Half Day ({emp.check_in_time || 'Logged'})
                             </span>
                           )}
                           {emp.status === "ABSENT" && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: '#f8d7da', color: '#721c24', padding: '0.2rem 0.55rem', borderRadius: '14px', fontWeight: 700, fontSize: '0.7rem' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.35)', padding: '0.2rem 0.55rem', borderRadius: '14px', fontWeight: 700, fontSize: '0.7rem' }}>
                               <XCircle size={12} /> Absent
                             </span>
                           )}
                           {emp.status === "ON_LEAVE" && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: '#fce4ec', color: '#c2185b', padding: '0.2rem 0.55rem', borderRadius: '14px', fontWeight: 700, fontSize: '0.7rem' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(236, 72, 153, 0.15)', color: '#f472b6', border: '1px solid rgba(236, 72, 153, 0.35)', padding: '0.2rem 0.55rem', borderRadius: '14px', fontWeight: 700, fontSize: '0.7rem' }}>
                               <Clock3 size={12} /> On Leave
                             </span>
                           )}
@@ -801,7 +812,7 @@ export default function AdminDashboard() {
                                 padding: '0.2rem 0.4rem',
                                 borderRadius: '4px',
                                 border: '1px solid #28a745',
-                                background: emp.status === "PRESENT" ? '#28a745' : '#fff',
+                                background: emp.status === "PRESENT" ? '#28a745' : 'rgba(16, 24, 40, 0.85)',
                                 color: emp.status === "PRESENT" ? '#fff' : '#28a745',
                                 fontSize: '0.66rem',
                                 fontWeight: 700,
@@ -817,7 +828,7 @@ export default function AdminDashboard() {
                                 padding: '0.2rem 0.4rem',
                                 borderRadius: '4px',
                                 border: '1px solid #ffc107',
-                                background: emp.status === "HALF_DAY" ? '#ffc107' : '#fff',
+                                background: emp.status === "HALF_DAY" ? '#ffc107' : 'rgba(16, 24, 40, 0.85)',
                                 color: emp.status === "HALF_DAY" ? '#000' : '#856404',
                                 fontSize: '0.66rem',
                                 fontWeight: 700,
@@ -833,7 +844,7 @@ export default function AdminDashboard() {
                                 padding: '0.2rem 0.4rem',
                                 borderRadius: '4px',
                                 border: '1px solid #dc3545',
-                                background: emp.status === "ABSENT" ? '#dc3545' : '#fff',
+                                background: emp.status === "ABSENT" ? '#dc3545' : 'rgba(16, 24, 40, 0.85)',
                                 color: emp.status === "ABSENT" ? '#fff' : '#dc3545',
                                 fontSize: '0.66rem',
                                 fontWeight: 700,
@@ -849,7 +860,7 @@ export default function AdminDashboard() {
                                 padding: '0.2rem 0.4rem',
                                 borderRadius: '4px',
                                 border: '1px solid #c2185b',
-                                background: emp.status === "ON_LEAVE" ? '#c2185b' : '#fff',
+                                background: emp.status === "ON_LEAVE" ? '#c2185b' : 'rgba(16, 24, 40, 0.85)',
                                 color: emp.status === "ON_LEAVE" ? '#fff' : '#c2185b',
                                 fontSize: '0.66rem',
                                 fontWeight: 700,
@@ -878,7 +889,7 @@ export default function AdminDashboard() {
                               <Trash2 size={16} />
                             </button>
                           ) : (
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                            <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 700 }}>
                               System Root
                             </span>
                           )}
@@ -888,7 +899,7 @@ export default function AdminDashboard() {
                   })}
                   {filteredEmployees.length === 0 && (
                     <tr>
-                      <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+                      <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
                         No employee records found matching your filters.
                       </td>
                     </tr>
@@ -903,24 +914,24 @@ export default function AdminDashboard() {
         {activeTab === "ATTENDANCE" && (
           <div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.9rem' }}>
-              
+
               {/* Present Column (Compact) */}
-              <div className="glass-card" style={{ padding: '0.9rem 1rem', background: 'rgba(255,255,255,0.75)', borderTop: '3px solid #28a745', borderRadius: '12px' }}>
+              <div className="glass-card" style={{ padding: '0.9rem 1rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderTop: '3px solid #28a745', borderRadius: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
                   <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#1e7e34', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                     <CheckCircle2 size={15} /> Present ({stats.present})
                   </div>
-                  <span style={{ background: '#d4edda', color: '#155724', fontWeight: 800, fontSize: '0.65rem', padding: '0.15rem 0.45rem', borderRadius: '10px' }}>
+                  <span style={{ background: 'rgba(0, 245, 212, 0.15)', color: '#00f5d4', border: '1px solid rgba(0, 245, 212, 0.35)', fontWeight: 800, fontSize: '0.65rem', padding: '0.15rem 0.45rem', borderRadius: '10px' }}>
                     Active
                   </span>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {employees.filter(e => e.status === "PRESENT").map(emp => (
-                    <div key={emp.id} style={{ background: '#fff', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div key={emp.id} style={{ background: 'rgba(16, 24, 40, 0.85)', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: '0.78rem', color: 'var(--text-primary)' }}>{emp.name}</div>
-                        <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>{emp.id} • {emp.role}</div>
+                        <div style={{ fontWeight: 700, fontSize: '0.78rem', color: '#ffffff' }}>{emp.name}</div>
+                        <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>{emp.id} • {emp.role}</div>
                         <div style={{ fontSize: '0.65rem', color: '#28a745', marginTop: '0.1rem', fontWeight: 600 }}>
                           In: {emp.check_in_time || '09:00 AM'}
                         </div>
@@ -937,36 +948,36 @@ export default function AdminDashboard() {
               </div>
 
               {/* Absent Column (Compact) */}
-              <div className="glass-card" style={{ padding: '0.9rem 1rem', background: 'rgba(255,255,255,0.75)', borderTop: '3px solid #dc3545', borderRadius: '12px' }}>
+              <div className="glass-card" style={{ padding: '0.9rem 1rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderTop: '3px solid #dc3545', borderRadius: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
                   <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#dc3545', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                     <XCircle size={15} /> Absent ({stats.absent})
                   </div>
-                  <span style={{ background: '#f8d7da', color: '#721c24', fontWeight: 800, fontSize: '0.65rem', padding: '0.15rem 0.45rem', borderRadius: '10px' }}>
+                  <span style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.35)', fontWeight: 800, fontSize: '0.65rem', padding: '0.15rem 0.45rem', borderRadius: '10px' }}>
                     Off-Duty
                   </span>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {employees.filter(e => e.status === "ABSENT").map(emp => (
-                    <div key={emp.id} style={{ background: '#fff', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div key={emp.id} style={{ background: 'rgba(16, 24, 40, 0.85)', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: '0.78rem', color: 'var(--text-primary)' }}>{emp.name}</div>
-                        <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>{emp.id} • {emp.department}</div>
+                        <div style={{ fontWeight: 700, fontSize: '0.78rem', color: '#ffffff' }}>{emp.name}</div>
+                        <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>{emp.id} • {emp.department}</div>
                         <div style={{ fontSize: '0.65rem', color: '#dc3545', marginTop: '0.1rem', fontWeight: 600 }}>
                           No Check-in
                         </div>
                       </div>
                       <button
                         onClick={() => handleStatusChange(emp.id, "PRESENT")}
-                        style={{ fontSize: '0.68rem', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid #28a745', background: '#28a745', color: '#fff', cursor: 'pointer', fontWeight: 700 }}
+                        style={{ fontSize: '0.68rem', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid #28a745', background: '#28a745', color: 'rgba(16, 24, 40, 0.85)', cursor: 'pointer', fontWeight: 700 }}
                       >
                         Present
                       </button>
                     </div>
                   ))}
                   {stats.absent === 0 && (
-                    <div style={{ textAlign: 'center', padding: '1.2rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                    <div style={{ textAlign: 'center', padding: '1.2rem', color: '#94a3b8', fontSize: '0.75rem' }}>
                       No absent staff today! 100% accounted for.
                     </div>
                   )}
@@ -974,36 +985,36 @@ export default function AdminDashboard() {
               </div>
 
               {/* On Leave Column (Compact) */}
-              <div className="glass-card" style={{ padding: '0.9rem 1rem', background: 'rgba(255,255,255,0.75)', borderTop: '3px solid #ffc107', borderRadius: '12px' }}>
+              <div className="glass-card" style={{ padding: '0.9rem 1rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderTop: '3px solid #ffc107', borderRadius: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
                   <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#b58105', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                     <Clock3 size={15} /> On Leave ({stats.onLeave})
                   </div>
-                  <span style={{ background: '#fff3cd', color: '#856404', fontWeight: 800, fontSize: '0.65rem', padding: '0.15rem 0.45rem', borderRadius: '10px' }}>
+                  <span style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.35)', fontWeight: 800, fontSize: '0.65rem', padding: '0.15rem 0.45rem', borderRadius: '10px' }}>
                     Approved
                   </span>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {employees.filter(e => e.status === "ON_LEAVE").map(emp => (
-                    <div key={emp.id} style={{ background: '#fff', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div key={emp.id} style={{ background: 'rgba(16, 24, 40, 0.85)', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: '0.78rem', color: 'var(--text-primary)' }}>{emp.name}</div>
-                        <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>{emp.id} • {emp.department}</div>
+                        <div style={{ fontWeight: 700, fontSize: '0.78rem', color: '#ffffff' }}>{emp.name}</div>
+                        <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>{emp.id} • {emp.department}</div>
                         <div style={{ fontSize: '0.65rem', color: '#b58105', marginTop: '0.1rem', fontWeight: 600 }}>
                           Leave Granted
                         </div>
                       </div>
                       <button
                         onClick={() => handleStatusChange(emp.id, "PRESENT")}
-                        style={{ fontSize: '0.68rem', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid #28a745', background: '#28a745', color: '#fff', cursor: 'pointer', fontWeight: 700 }}
+                        style={{ fontSize: '0.68rem', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid #28a745', background: '#28a745', color: 'rgba(16, 24, 40, 0.85)', cursor: 'pointer', fontWeight: 700 }}
                       >
                         Present
                       </button>
                     </div>
                   ))}
                   {stats.onLeave === 0 && (
-                    <div style={{ textAlign: 'center', padding: '1.2rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                    <div style={{ textAlign: 'center', padding: '1.2rem', color: '#94a3b8', fontSize: '0.75rem' }}>
                       No employees on leave today.
                     </div>
                   )}
@@ -1017,15 +1028,15 @@ export default function AdminDashboard() {
         {/* TAB 3: UPCOMING EVENTS & INTERACTIVE CALENDAR */}
         {activeTab === "CALENDAR" && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '2rem' }}>
-            
+
             {/* Calendar Month View */}
-            <div className="glass-card" style={{ padding: '2rem', background: 'rgba(255,255,255,0.75)' }}>
+            <div className="glass-card" style={{ padding: '2rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <div>
-                  <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#ffffff' }}>
                     {monthNames[currentMonthDate.getMonth()]} {currentMonthDate.getFullYear()}
                   </h3>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
                     {events.length} company events recorded
                   </div>
                 </div>
@@ -1033,13 +1044,13 @@ export default function AdminDashboard() {
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button
                     onClick={() => setCurrentMonthDate(new Date(currentMonthDate.getFullYear(), currentMonthDate.getMonth() - 1, 1))}
-                    style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: '#fff', cursor: 'pointer' }}
+                    style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: 'rgba(16, 24, 40, 0.85)', cursor: 'pointer' }}
                   >
                     <ChevronLeft size={16} />
                   </button>
                   <button
                     onClick={() => setCurrentMonthDate(new Date(currentMonthDate.getFullYear(), currentMonthDate.getMonth() + 1, 1))}
-                    style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: '#fff', cursor: 'pointer' }}
+                    style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: 'rgba(16, 24, 40, 0.85)', cursor: 'pointer' }}
                   >
                     <ChevronRight size={16} />
                   </button>
@@ -1047,7 +1058,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* Days header */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.5rem', textAlign: 'center', fontWeight: 700, fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.6rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.5rem', textAlign: 'center', fontWeight: 700, fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.6rem' }}>
                 <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
               </div>
 
@@ -1072,19 +1083,19 @@ export default function AdminDashboard() {
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        border: hasEvent ? '2px solid var(--lilac-dark)' : '1px solid rgba(0,0,0,0.06)',
+                        border: hasEvent ? '2px solid #38bdf8' : '1px solid rgba(0,0,0,0.06)',
                         background: hasEvent ? (isAudit ? 'rgba(122, 91, 156, 0.15)' : 'rgba(244, 238, 248, 0.9)') : '#ffffff',
                         cursor: hasEvent ? 'pointer' : 'default',
                         position: 'relative'
                       }}
                     >
-                      <span style={{ fontWeight: hasEvent ? 800 : 500, fontSize: '0.9rem', color: hasEvent ? 'var(--lilac-dark)' : 'var(--text-primary)' }}>
+                      <span style={{ fontWeight: hasEvent ? 800 : 500, fontSize: '0.9rem', color: hasEvent ? '#38bdf8' : '#ffffff' }}>
                         {c.day}
                       </span>
                       {hasEvent && (
                         <div style={{ display: 'flex', gap: '2px', marginTop: '2px' }}>
                           {c.hasEvents.map((_, eIdx) => (
-                            <span key={eIdx} style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'var(--lilac-dark)' }} />
+                            <span key={eIdx} style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#38bdf8' }} />
                           ))}
                         </div>
                       )}
@@ -1093,18 +1104,18 @@ export default function AdminDashboard() {
                 })}
               </div>
 
-              <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1.5rem', fontSize: '0.8rem', color: '#94a3b8' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--lilac-dark)' }} />
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#38bdf8' }} />
                   <span>Company Event / Holiday</span>
                 </div>
               </div>
             </div>
 
             {/* Event List & Add Event Trigger */}
-            <div className="glass-card" style={{ padding: '2rem', background: 'rgba(255,255,255,0.75)' }}>
+            <div className="glass-card" style={{ padding: '2rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#ffffff' }}>
                   Upcoming Events & Holidays
                 </h3>
                 <button
@@ -1123,7 +1134,7 @@ export default function AdminDashboard() {
                     style={{
                       padding: '1.2rem',
                       borderRadius: '12px',
-                      background: '#fff',
+                      background: 'rgba(16, 24, 40, 0.85)',
                       border: '1px solid rgba(0,0,0,0.06)',
                       display: 'flex',
                       justifyContent: 'space-between',
@@ -1132,16 +1143,16 @@ export default function AdminDashboard() {
                   >
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>{ev.title}</span>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '20px', background: 'var(--lilac-light)', color: 'var(--lilac-dark)' }}>
+                        <span style={{ fontSize: '1rem', fontWeight: 800, color: '#ffffff' }}>{ev.title}</span>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '20px', background: 'var(--lilac-light)', color: '#38bdf8' }}>
                           {ev.type}
                         </span>
                       </div>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--lilac-dark)', marginTop: '0.3rem' }}>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#38bdf8', marginTop: '0.3rem' }}>
                         📅 {ev.date}
                       </div>
                       {ev.description && (
-                        <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.3rem' }}>
+                        <div style={{ fontSize: '0.82rem', color: '#94a3b8', marginTop: '0.3rem' }}>
                           {ev.description}
                         </div>
                       )}
@@ -1167,86 +1178,86 @@ export default function AdminDashboard() {
           <div>
             {/* Task KPI Counters */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '0.8rem', marginBottom: '1.2rem' }}>
-              <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.8)', borderRadius: '12px' }}>
+              <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Total Queue</span>
-                  <ShieldCheck size={16} color="var(--lilac-dark)" />
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8' }}>Total Queue</span>
+                  <ShieldCheck size={16} color="#38bdf8" />
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.2rem' }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ffffff', marginTop: '0.2rem' }}>
                   {taskStats.total}
                 </div>
-                <div style={{ fontSize: '0.66rem', color: 'var(--text-secondary)' }}>
+                <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
                   All registered tasks
                 </div>
               </div>
 
-              <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.8)', borderRadius: '12px' }}>
+              <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', borderLeft: '4px solid #0284c7', boxShadow: '0 4px 16px rgba(2, 132, 199, 0.08)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#1b4f72' }}>🔵 In Progress</span>
-                  <Clock size={16} color="#1b4f72" />
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#0284c7' }}>🔵 In Progress</span>
+                  <Clock size={16} color="#0284c7" />
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1b4f72', marginTop: '0.2rem' }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0284c7', marginTop: '0.2rem' }}>
                   {taskStats.inProgress}
                 </div>
-                <div style={{ fontSize: '0.66rem', color: 'var(--text-secondary)' }}>
-                  Actively under forensic check
+                <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
+                  Active development sprints
                 </div>
               </div>
 
-              <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.8)', borderRadius: '12px' }}>
+              <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', borderLeft: '4px solid #8b5cf6', boxShadow: '0 4px 16px rgba(139, 92, 246, 0.08)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#5b2c6f' }}>🟣 Under Review</span>
-                  <Layers size={16} color="#5b2c6f" />
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#8b5cf6' }}>🟣 Under Review</span>
+                  <Layers size={16} color="#8b5cf6" />
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#5b2c6f', marginTop: '0.2rem' }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#8b5cf6', marginTop: '0.2rem' }}>
                   {taskStats.review}
                 </div>
-                <div style={{ fontSize: '0.66rem', color: 'var(--text-secondary)' }}>
-                  Senior checker signoff pending
+                <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
+                  Code review & QA approval
                 </div>
               </div>
 
-              <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.8)', borderRadius: '12px' }}>
+              <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', borderLeft: '4px solid #10b981', boxShadow: '0 4px 16px rgba(16, 185, 129, 0.08)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#155724' }}>🟢 Verified / Done</span>
-                  <CheckCircle2 size={16} color="#155724" />
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#10b981' }}>🟢 Completed / Done</span>
+                  <CheckCircle2 size={16} color="#10b981" />
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#155724', marginTop: '0.2rem' }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', marginTop: '0.2rem' }}>
                   {taskStats.verified}
                 </div>
-                <div style={{ fontSize: '0.66rem', color: 'var(--text-secondary)' }}>
-                  Cleared background records
+                <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
+                  Delivered & verified
                 </div>
               </div>
 
-              <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.8)', borderRadius: '12px' }}>
+              <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', borderLeft: '4px solid #ef4444', boxShadow: '0 4px 16px rgba(239, 68, 68, 0.08)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#721c24' }}>🔴 Blocked</span>
-                  <XCircle size={16} color="#721c24" />
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#ef4444' }}>🔴 Blocked</span>
+                  <XCircle size={16} color="#ef4444" />
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#721c24', marginTop: '0.2rem' }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ef4444', marginTop: '0.2rem' }}>
                   {taskStats.blocked}
                 </div>
-                <div style={{ fontSize: '0.66rem', color: 'var(--text-secondary)' }}>
-                  Discrepancy / Adverse hit
+                <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
+                  Awaiting dependencies / APIs
                 </div>
               </div>
             </div>
 
             {/* Task Filter & Search Bar */}
-            <div className="glass-card" style={{ padding: '0.7rem 1rem', marginBottom: '1rem', display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(255,255,255,0.75)', borderRadius: '12px' }}>
+            <div className="glass-card" style={{ padding: '0.7rem 1rem', marginBottom: '1rem', display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)' }}>
               <div style={{ flex: '1 1 220px', position: 'relative' }}>
-                <Search size={14} color="var(--lilac-dark)" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '0.8rem' }} />
+                <Search size={14} color="#0284c7" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '0.8rem' }} />
                 <input
                   type="text"
-                  placeholder="Search tasks by ID, check description, assigned employee..."
+                  placeholder="Search tasks by ID, task description, assigned engineer..."
                   value={taskSearchTerm}
                   onChange={(e) => setTaskSearchTerm(e.target.value)}
                   style={{
                     width: '100%',
                     padding: '0.45rem 0.8rem 0.45rem 2.2rem',
                     borderRadius: '8px',
-                    border: '1px solid rgba(0,0,0,0.1)',
+                    border: '1px solid rgba(0,0,0,0.12)',
                     fontSize: '0.78rem',
                     outline: 'none',
                     boxSizing: 'border-box'
@@ -1260,18 +1271,19 @@ export default function AdminDashboard() {
                 style={{
                   padding: '0.45rem 0.8rem',
                   borderRadius: '8px',
-                  border: '1px solid rgba(0,0,0,0.1)',
+                  border: '1px solid rgba(2, 132, 199, 0.3)',
                   fontSize: '0.78rem',
                   outline: 'none',
-                  background: '#ffffff',
+                  background: '#f8fafc',
                   fontWeight: 600,
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  color: '#0f172a'
                 }}
               >
                 <option value="ALL">All Statuses ({taskStats.total})</option>
                 <option value="In Progress">🔵 In Progress ({taskStats.inProgress})</option>
                 <option value="Review">🟣 Under Review ({taskStats.review})</option>
-                <option value="Verified">🟢 Verified / Done ({taskStats.verified})</option>
+                <option value="Verified">🟢 Completed / Done ({taskStats.verified})</option>
                 <option value="Blocked">🔴 Blocked ({taskStats.blocked})</option>
               </select>
 
@@ -1281,13 +1293,15 @@ export default function AdminDashboard() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.35rem',
-                  padding: '0.45rem 0.75rem',
+                  padding: '0.45rem 0.85rem',
                   borderRadius: '8px',
-                  border: '1px solid rgba(0,0,0,0.1)',
-                  background: '#ffffff',
+                  border: '1px solid rgba(2, 132, 199, 0.4)',
+                  background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                  color: '#ffffff',
                   fontSize: '0.76rem',
-                  fontWeight: 600,
-                  cursor: 'pointer'
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)'
                 }}
                 title="Refresh Tasks"
               >
@@ -1297,109 +1311,128 @@ export default function AdminDashboard() {
             </div>
 
             {/* Tasks Table */}
-            <div className="glass-card" style={{ padding: '1rem', background: 'rgba(255,255,255,0.85)', borderRadius: '12px', overflowX: 'auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                  Verification Tasks Roster ({filteredTasks.length})
+            <div className="glass-card" style={{ padding: '1.1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', overflowX: 'auto', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.06)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                  Tasks Roster ({filteredTasks.length})
                 </h3>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-                  Admin View & Live Status Control
+                <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>
+                  Live Operational Task Management
                 </span>
               </div>
 
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1.5px solid rgba(0,0,0,0.08)', color: 'var(--text-secondary)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    <th style={{ padding: '0.6rem 0.7rem' }}>Task ID</th>
-                    <th style={{ padding: '0.6rem 0.7rem' }}>Verification Check</th>
-                    <th style={{ padding: '0.6rem 0.7rem' }}>Assigned Staff</th>
-                    <th style={{ padding: '0.6rem 0.7rem' }}>Priority</th>
-                    <th style={{ padding: '0.6rem 0.7rem' }}>SLA Target</th>
-                    <th style={{ padding: '0.6rem 0.7rem' }}>Current Status</th>
-                    <th style={{ padding: '0.6rem 0.7rem', textAlign: 'right' }}>Admin Action</th>
+                  <tr style={{ borderBottom: '2px solid rgba(0,0,0,0.06)', color: '#475569', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <th style={{ padding: '0.7rem 0.8rem' }}>Task ID</th>
+                    <th style={{ padding: '0.7rem 0.8rem' }}>Task</th>
+                    <th style={{ padding: '0.7rem 0.8rem' }}>Assigned Staff</th>
+                    <th style={{ padding: '0.7rem 0.8rem' }}>Priority</th>
+                    <th style={{ padding: '0.7rem 0.8rem' }}>SLA Target</th>
+                    <th style={{ padding: '0.7rem 0.8rem' }}>Current Status</th>
+                    <th style={{ padding: '0.7rem 0.8rem', textAlign: 'right' }}>Admin Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredTasks.map((t) => (
                     <tr key={t.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', fontSize: '0.78rem' }}>
-                      <td style={{ padding: '0.65rem 0.7rem', fontWeight: 800, color: 'var(--lilac-dark)' }}>
-                        {t.id}
-                      </td>
-                      <td style={{ padding: '0.65rem 0.7rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        {t.title}
-                      </td>
-                      <td style={{ padding: '0.65rem 0.7rem' }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: 'var(--lilac-light)', color: 'var(--lilac-dark)', padding: '0.15rem 0.55rem', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 700 }}>
-                          👤 {t.employee_name || t.assigned_to || 'Operations Staff'}
+                      <td style={{ padding: '0.7rem 0.8rem', fontWeight: 800 }}>
+                        <span style={{ background: 'rgba(99, 102, 241, 0.12)', color: '#4338ca', padding: '0.2rem 0.55rem', borderRadius: '6px', fontSize: '0.74rem' }}>
+                          {t.id}
                         </span>
                       </td>
-                      <td style={{ padding: '0.65rem 0.7rem' }}>
+                      <td style={{ padding: '0.7rem 0.8rem', fontWeight: 700, color: '#1e293b' }}>
+                        {t.title}
+                      </td>
+                      <td style={{ padding: '0.7rem 0.8rem' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: 'rgba(2, 132, 199, 0.1)', color: '#0369a1', padding: '0.2rem 0.65rem', borderRadius: '14px', fontSize: '0.72rem', fontWeight: 700 }}>
+                          👨‍💻 {t.employee_name || t.assigned_to || 'Software Engineer'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.7rem 0.8rem' }}>
                         <span style={{
                           fontSize: '0.68rem',
                           fontWeight: 800,
-                          padding: '0.15rem 0.5rem',
+                          padding: '0.2rem 0.55rem',
                           borderRadius: '10px',
-                          background: t.priority === 'Urgent' ? '#f8d7da' : t.priority === 'High' ? '#fff3cd' : '#f0f0f0',
-                          color: t.priority === 'Urgent' ? '#721c24' : t.priority === 'High' ? '#856404' : '#555'
+                          background: t.priority === 'Urgent' ? '#fee2e2' : t.priority === 'High' ? '#fef3c7' : '#f1f5f9',
+                          color: t.priority === 'Urgent' ? '#b91c1c' : t.priority === 'High' ? '#b45309' : '#475569',
+                          border: `1px solid ${t.priority === 'Urgent' ? '#fca5a5' : t.priority === 'High' ? '#fcd34d' : '#cbd5e1'}`
                         }}>
                           {t.priority}
                         </span>
                       </td>
-                      <td style={{ padding: '0.65rem 0.7rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                      <td style={{ padding: '0.7rem 0.8rem', color: '#475569', fontWeight: 700 }}>
                         {t.time}
                       </td>
-                      <td style={{ padding: '0.65rem 0.7rem' }}>
+                      <td style={{ padding: '0.7rem 0.8rem' }}>
                         <span style={{
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '0.3rem',
-                          fontSize: '0.72rem',
+                          gap: '0.35rem',
+                          fontSize: '0.74rem',
                           fontWeight: 800,
-                          padding: '0.2rem 0.6rem',
+                          padding: '0.25rem 0.65rem',
                           borderRadius: '12px',
                           background:
-                            t.status === 'Verified' ? '#d4edda' :
-                            t.status === 'Review' ? '#e8daef' :
-                            t.status === 'Blocked' ? '#f8d7da' : '#eaf2f8',
+                            t.status === 'Verified' ? '#dcfce7' :
+                              t.status === 'Review' ? '#f3e8ff' :
+                                t.status === 'Blocked' ? '#fee2e2' : '#e0f2fe',
                           color:
-                            t.status === 'Verified' ? '#155724' :
-                            t.status === 'Review' ? '#5b2c6f' :
-                            t.status === 'Blocked' ? '#721c24' : '#1b4f72'
+                            t.status === 'Verified' ? '#15803d' :
+                              t.status === 'Review' ? '#7e22ce' :
+                                t.status === 'Blocked' ? '#b91c1c' : '#0369a1',
+                          border: `1px solid ${t.status === 'Verified' ? '#86efac' :
+                              t.status === 'Review' ? '#d8b4fe' :
+                                t.status === 'Blocked' ? '#fca5a5' : '#7dd3fc'
+                            }`
                         }}>
-                          {t.status === 'Verified' && <CheckCircle2 size={12} />}
-                          {t.status === 'Review' && <Layers size={12} />}
-                          {t.status === 'Blocked' && <XCircle size={12} />}
-                          {t.status === 'In Progress' && <Clock size={12} />}
+                          {t.status === 'Verified' && <CheckCircle2 size={13} />}
+                          {t.status === 'Review' && <Layers size={13} />}
+                          {t.status === 'Blocked' && <XCircle size={13} />}
+                          {t.status === 'In Progress' && <Clock size={13} />}
                           {t.status}
                         </span>
                       </td>
-                      <td style={{ padding: '0.65rem 0.7rem', textAlign: 'right' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <td style={{ padding: '0.7rem 0.8rem', textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
                           <select
                             value={t.status}
                             onChange={(e) => handleTaskStatusChange(t.id, e.target.value as any)}
                             style={{
-                              padding: '0.25rem 0.5rem',
-                              borderRadius: '6px',
-                              border: '1px solid rgba(0,0,0,0.12)',
-                              fontSize: '0.7rem',
+                              padding: '0.3rem 0.6rem',
+                              borderRadius: '8px',
+                              border: '1.5px solid rgba(2, 132, 199, 0.35)',
+                              fontSize: '0.72rem',
                               fontWeight: 700,
-                              background: '#ffffff',
+                              background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)',
+                              color: '#0f172a',
                               cursor: 'pointer',
-                              outline: 'none'
+                              outline: 'none',
+                              boxShadow: '0 1px 4px rgba(0,0,0,0.05)'
                             }}
                           >
                             <option value="In Progress">Set In Progress</option>
                             <option value="Review">Set Review</option>
-                            <option value="Verified">Set Verified</option>
+                            <option value="Verified">Set Completed</option>
                             <option value="Blocked">Set Blocked</option>
                           </select>
                           <button
                             onClick={() => handleDeleteTask(t.id)}
                             title="Delete Task"
-                            style={{ background: 'transparent', border: 'none', color: '#dc3545', cursor: 'pointer', padding: '0.2rem' }}
+                            style={{
+                              background: 'rgba(239, 68, 68, 0.1)',
+                              border: '1px solid rgba(239, 68, 68, 0.25)',
+                              color: '#dc2626',
+                              cursor: 'pointer',
+                              padding: '0.3rem',
+                              borderRadius: '6px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={13} />
                           </button>
                         </div>
                       </td>
@@ -1408,7 +1441,7 @@ export default function AdminDashboard() {
 
                   {filteredTasks.length === 0 && (
                     <tr>
-                      <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                      <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
                         No tasks match the filter criteria.
                       </td>
                     </tr>
@@ -1427,8 +1460,8 @@ export default function AdminDashboard() {
           <div style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.6)',
-            backdropFilter: 'blur(10px)',
+            background: 'rgba(0,0,0,0.75)',
+            backdropFilter: 'blur(12px)',
             zIndex: 9999,
             display: 'flex',
             alignItems: 'center',
@@ -1436,42 +1469,64 @@ export default function AdminDashboard() {
             padding: '1.5rem'
           }}>
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.92, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-card"
+              exit={{ scale: 0.92, opacity: 0 }}
               style={{
                 width: '100%',
                 maxWidth: '560px',
-                padding: '2.5rem',
-                background: '#ffffff',
-                border: '1px solid rgba(0,0,0,0.1)',
+                padding: '2.4rem',
+                background: 'rgba(16, 24, 40, 0.95)',
+                backdropFilter: 'blur(25px)',
+                border: '1px solid rgba(56, 189, 248, 0.35)',
+                borderRadius: '20px',
+                boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(0, 245, 212, 0.12)',
                 maxHeight: '90vh',
-                overflowY: 'auto'
+                overflowY: 'auto',
+                boxSizing: 'border-box'
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.8rem' }}>
                 <div>
-                  <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  <h3 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#ffffff', margin: '0 0 0.3rem 0' }}>
                     Add New Employee
                   </h3>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  <p style={{ fontSize: '0.84rem', color: '#94a3b8', margin: 0 }}>
                     Create credentials and assign roles in the single employees table
                   </p>
                 </div>
-                <button 
+                <button
                   onClick={() => setShowAddEmpModal(false)}
-                  style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+                  style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.4rem' }}
                 >
-                  <X size={24} />
+                  <X size={22} />
                 </button>
               </div>
 
-              <form onSubmit={handleCreateEmployee} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                
+              {empModalError && (
+                <div style={{
+                  padding: '0.75rem 1rem',
+                  borderRadius: '10px',
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                  color: '#f87171',
+                  fontSize: '0.84rem',
+                  fontWeight: 600,
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <XCircle size={16} style={{ flexShrink: 0 }} />
+                  <span>{empModalError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleCreateEmployee} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.4rem' }}>
                       Full Name *
                     </label>
                     <input
@@ -1480,11 +1535,21 @@ export default function AdminDashboard() {
                       placeholder="e.g. Ramesh Chandra"
                       value={newEmp.name}
                       onChange={e => setNewEmp({ ...newEmp, name: e.target.value })}
-                      style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', boxSizing: 'border-box' }}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 0.9rem',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                        background: 'rgba(7, 10, 16, 0.75)',
+                        color: '#ffffff',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.4rem' }}>
                       Employee ID (optional)
                     </label>
                     <input
@@ -1492,14 +1557,24 @@ export default function AdminDashboard() {
                       placeholder="Auto-generated e.g. EMP-106"
                       value={newEmp.id}
                       onChange={e => setNewEmp({ ...newEmp, id: e.target.value })}
-                      style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', boxSizing: 'border-box' }}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 0.9rem',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                        background: 'rgba(7, 10, 16, 0.75)',
+                        color: '#ffffff',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
                     />
                   </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.4rem' }}>
                       Username *
                     </label>
                     <input
@@ -1508,11 +1583,21 @@ export default function AdminDashboard() {
                       placeholder="e.g. ramesh.c"
                       value={newEmp.username}
                       onChange={e => setNewEmp({ ...newEmp, username: e.target.value })}
-                      style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', boxSizing: 'border-box' }}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 0.9rem',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                        background: 'rgba(7, 10, 16, 0.75)',
+                        color: '#ffffff',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.4rem' }}>
                       Password *
                     </label>
                     <input
@@ -1521,27 +1606,47 @@ export default function AdminDashboard() {
                       placeholder="e.g. pass123"
                       value={newEmp.password}
                       onChange={e => setNewEmp({ ...newEmp, password: e.target.value })}
-                      style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', boxSizing: 'border-box' }}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 0.9rem',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                        background: 'rgba(7, 10, 16, 0.75)',
+                        color: '#ffffff',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
                     />
                   </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.4rem' }}>
                       Role / Designation *
                     </label>
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Forensic BGV Checker"
+                      placeholder="e.g. Full-Stack Developer"
                       value={newEmp.role}
                       onChange={e => setNewEmp({ ...newEmp, role: e.target.value })}
-                      style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', boxSizing: 'border-box' }}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 0.9rem',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                        background: 'rgba(7, 10, 16, 0.75)',
+                        color: '#ffffff',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.4rem' }}>
                       Corporate Email *
                     </label>
                     <input
@@ -1550,39 +1655,51 @@ export default function AdminDashboard() {
                       placeholder="e.g. ramesh@a2z.com"
                       value={newEmp.email}
                       onChange={e => setNewEmp({ ...newEmp, email: e.target.value })}
-                      style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', boxSizing: 'border-box' }}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 0.9rem',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                        background: 'rgba(7, 10, 16, 0.75)',
+                        color: '#ffffff',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
-                    Initial Attendance Status
-                  </label>
-                  <select
-                    value={newEmp.status}
-                    onChange={e => setNewEmp({ ...newEmp, status: e.target.value as any })}
-                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', boxSizing: 'border-box' }}
-                  >
-                    <option value="PRESENT">Present</option>
-                    <option value="HALF_DAY">Half Day</option>
-                    <option value="ABSENT">Absent</option>
-                    <option value="ON_LEAVE">On Leave</option>
-                  </select>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.8rem', marginTop: '1.4rem' }}>
                   <button
                     type="button"
                     onClick={() => setShowAddEmpModal(false)}
-                    style={{ padding: '0.8rem 1.4rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: '#fff', cursor: 'pointer', fontWeight: 600 }}
+                    style={{
+                      padding: '0.75rem 1.4rem',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      color: '#cbd5e1',
+                      cursor: 'pointer',
+                      fontWeight: 700,
+                      fontSize: '0.88rem'
+                    }}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="btn-primary"
-                    style={{ padding: '0.8rem 1.8rem', fontSize: '0.95rem' }}
+                    style={{
+                      padding: '0.75rem 1.8rem',
+                      fontSize: '0.9rem',
+                      fontWeight: 800,
+                      borderRadius: '10px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #00f5d4 0%, #0284c7 100%)',
+                      color: '#070a10',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 18px rgba(0, 245, 212, 0.35)'
+                    }}
                   >
                     Create Record
                   </button>
@@ -1599,8 +1716,8 @@ export default function AdminDashboard() {
           <div style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.6)',
-            backdropFilter: 'blur(10px)',
+            background: 'rgba(0,0,0,0.75)',
+            backdropFilter: 'blur(12px)',
             zIndex: 9999,
             display: 'flex',
             alignItems: 'center',
@@ -1608,25 +1725,28 @@ export default function AdminDashboard() {
             padding: '1.5rem'
           }}>
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.92, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-card"
+              exit={{ scale: 0.92, opacity: 0 }}
               style={{
                 width: '100%',
                 maxWidth: '480px',
-                padding: '2.5rem',
-                background: '#ffffff',
-                border: '1px solid rgba(0,0,0,0.1)'
+                padding: '2.4rem',
+                background: 'rgba(16, 24, 40, 0.95)',
+                backdropFilter: 'blur(25px)',
+                border: '1px solid rgba(56, 189, 248, 0.35)',
+                borderRadius: '20px',
+                boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(0, 245, 212, 0.12)',
+                boxSizing: 'border-box'
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
                   Add Upcoming Event
                 </h3>
-                <button 
+                <button
                   onClick={() => setShowAddEventModal(false)}
-                  style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+                  style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.4rem' }}
                 >
                   <X size={22} />
                 </button>
@@ -1634,22 +1754,32 @@ export default function AdminDashboard() {
 
               <form onSubmit={handleCreateEvent} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.4rem' }}>
                     Event Title *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Q4 Compliance Review"
+                    placeholder="e.g. Q4 Cloud Sprint Review"
                     value={newEvent.title}
                     onChange={e => setNewEvent({ ...newEvent, title: e.target.value })}
-                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', boxSizing: 'border-box' }}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 0.9rem',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(56, 189, 248, 0.3)',
+                      background: 'rgba(7, 10, 16, 0.75)',
+                      color: '#ffffff',
+                      fontSize: '0.9rem',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
                   />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.4rem' }}>
                       Date *
                     </label>
                     <input
@@ -1657,18 +1787,38 @@ export default function AdminDashboard() {
                       required
                       value={newEvent.date}
                       onChange={e => setNewEvent({ ...newEvent, date: e.target.value })}
-                      style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', boxSizing: 'border-box' }}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 0.9rem',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                        background: 'rgba(7, 10, 16, 0.75)',
+                        color: '#ffffff',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.4rem' }}>
                       Category *
                     </label>
                     <select
                       value={newEvent.type}
                       onChange={e => setNewEvent({ ...newEvent, type: e.target.value })}
-                      style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', boxSizing: 'border-box' }}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 0.9rem',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                        background: 'rgba(7, 10, 16, 0.75)',
+                        color: '#ffffff',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
                     >
                       <option value="Company Holiday">Company Holiday</option>
                       <option value="Audit">Audit / Security</option>
@@ -1680,7 +1830,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.4rem' }}>
                     Description
                   </label>
                   <textarea
@@ -1688,22 +1838,51 @@ export default function AdminDashboard() {
                     placeholder="Brief details about the event..."
                     value={newEvent.description}
                     onChange={e => setNewEvent({ ...newEvent, description: e.target.value })}
-                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 0.9rem',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(56, 189, 248, 0.3)',
+                      background: 'rgba(7, 10, 16, 0.75)',
+                      color: '#ffffff',
+                      fontSize: '0.9rem',
+                      outline: 'none',
+                      resize: 'vertical',
+                      boxSizing: 'border-box'
+                    }}
                   />
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.8rem', marginTop: '1rem' }}>
                   <button
                     type="button"
                     onClick={() => setShowAddEventModal(false)}
-                    style={{ padding: '0.75rem 1.4rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: '#fff', cursor: 'pointer', fontWeight: 600 }}
+                    style={{
+                      padding: '0.75rem 1.4rem',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      color: '#cbd5e1',
+                      cursor: 'pointer',
+                      fontWeight: 700,
+                      fontSize: '0.88rem'
+                    }}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="btn-primary"
-                    style={{ padding: '0.75rem 1.6rem', fontSize: '0.9rem' }}
+                    style={{
+                      padding: '0.75rem 1.6rem',
+                      fontSize: '0.9rem',
+                      fontWeight: 800,
+                      borderRadius: '10px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #00f5d4 0%, #0284c7 100%)',
+                      color: '#070a10',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 18px rgba(0, 245, 212, 0.35)'
+                    }}
                   >
                     Add to Calendar
                   </button>

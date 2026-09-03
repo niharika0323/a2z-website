@@ -94,37 +94,48 @@ export default function Services() {
             key={i} 
             className="glass-card"
             style={{ 
-              padding: '1.3rem 1.25rem', 
+              padding: '1.35rem 1.25rem', 
               display: 'flex', 
               flexDirection: 'column', 
               alignItems: 'flex-start', 
               textAlign: 'left', 
               gap: '0.75rem',
-              borderRadius: '16px'
+              borderRadius: '16px',
+              cursor: 'pointer'
             }}
             initial={{ opacity: 0, y: 25 }}
             whileInView={{ opacity: 1, y: 0 }}
+            whileHover={{ 
+              y: -6, 
+              scale: 1.02, 
+              borderColor: 'rgba(56, 189, 248, 0.45)',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.55), 0 0 25px rgba(56, 189, 248, 0.2)'
+            }}
             viewport={{ once: true, margin: "-30px" }}
             transition={{ 
-              duration: 0.5, 
+              duration: 0.45, 
               delay: (i % 3) * 0.08
             }}
           >
-            <div style={{ 
-              width: '44px', 
-              height: '44px', 
-              borderRadius: '12px', 
-              background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(168, 85, 247, 0.2))',
-              border: '1px solid rgba(56, 189, 248, 0.35)',
-              backdropFilter: 'blur(10px)',
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              boxShadow: '0 6px 18px rgba(56, 189, 248, 0.2)',
-              flexShrink: 0
-            }}>
+            <motion.div 
+              whileHover={{ rotate: 10, scale: 1.1 }}
+              transition={{ type: "spring", stiffness: 400, damping: 15 }}
+              style={{ 
+                width: '44px', 
+                height: '44px', 
+                borderRadius: '12px', 
+                background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(168, 85, 247, 0.2))',
+                border: '1px solid rgba(56, 189, 248, 0.35)',
+                backdropFilter: 'blur(10px)',
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                boxShadow: '0 6px 18px rgba(56, 189, 248, 0.2)',
+                flexShrink: 0
+              }}
+            >
               <svc.icon size={22} color="#38bdf8" />
-            </div>
+            </motion.div>
 
             <div>
               <h3 style={{ fontSize: '1.02rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.35rem', lineHeight: 1.3 }}>

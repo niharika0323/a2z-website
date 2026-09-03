@@ -32,11 +32,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check username uniqueness
+    // Check if user already exists with same Employee ID
+    if (id && id.trim()) {
+      const existingById = db.getEmployeeById(id.trim());
+      if (existingById) {
+        return NextResponse.json(
+          { error: 'User already exists with this employee ID.' },
+          { status: 409 }
+        );
+      }
+    }
+
+    // Check if user already exists with same Email
+    if (email && email.trim()) {
+      const existingByEmail = db.getEmployeeByEmail(email.trim());
+      if (existingByEmail) {
+        return NextResponse.json(
+          { error: 'User already exists with this email address.' },
+          { status: 409 }
+        );
+      }
+    }
+
+    // Check if user already exists with same Username
     const existing = db.getEmployeeByUsername(username);
     if (existing) {
       return NextResponse.json(
-        { error: `Username "${username}" is already taken.` },
+        { error: `User already exists with username "${username}".` },
         { status: 409 }
       );
     }

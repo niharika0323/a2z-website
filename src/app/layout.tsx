@@ -3,8 +3,8 @@ import "./globals.css";
 import Navbar from "./components/Navbar";
 
 export const metadata: Metadata = {
-  title: "A2Z Software Solutions",
-  description: "Futuristic web & software solutions",
+  title: "A2Z Software Solutions | Web & Mobile Application Development",
+  description: "Premier web and mobile application development agency. We architect bespoke software, full-stack Next.js websites, iOS/Android apps, and scalable cloud systems.",
 };
 
 export default function RootLayout({

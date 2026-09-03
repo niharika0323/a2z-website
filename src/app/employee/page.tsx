@@ -3,16 +3,16 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  CheckCircle2, 
-  XCircle, 
-  Clock3, 
-  Calendar, 
-  User, 
-  LogOut, 
-  ShieldCheck, 
-  Building, 
-  Clock, 
+import {
+  CheckCircle2,
+  XCircle,
+  Clock3,
+  Calendar,
+  User,
+  LogOut,
+  ShieldCheck,
+  Building,
+  Clock,
   Layers,
   ArrowRight,
   Plus,
@@ -55,10 +55,10 @@ export interface VerificationTask {
 }
 
 const DEFAULT_TASKS: VerificationTask[] = [
-  { id: "BGV-409", task: "Aadhaar Biometric Liveness", priority: "High", time: "SLA: 4h", status: "In Progress" },
-  { id: "BGV-118", task: "District e-Courts Cross-Match", priority: "Urgent", time: "SLA: 2h", status: "Review" },
-  { id: "BGV-882", task: "University Roll Forensic Auth", priority: "Normal", time: "SLA: 24h", status: "Verified" },
-  { id: "BGV-550", task: "EPFO Service History Integrity", priority: "Normal", time: "SLA: 12h", status: "In Progress" }
+  { id: "TSK-101", task: "Next.js Frontend Architecture & UI Sprint", priority: "High", time: "SLA: 4h", status: "In Progress" },
+  { id: "TSK-102", task: "REST API Gateway & Payment SDK Integration", priority: "Urgent", time: "SLA: 2h", status: "Review" },
+  { id: "TSK-103", task: "Mobile App Push Notifications & Offline Sync", priority: "Normal", time: "SLA: 24h", status: "Verified" },
+  { id: "TSK-104", task: "Cloud Database Migration & Query Indexing", priority: "Normal", time: "SLA: 12h", status: "In Progress" }
 ];
 
 export default function EmployeePortal() {
@@ -99,12 +99,18 @@ export default function EmployeePortal() {
       router.push("/login");
     }
 
-    // Load saved tasks from localStorage
+    // Load saved tasks from localStorage and filter out legacy BGV tasks
     const savedTasks = localStorage.getItem("a2z_employee_tasks");
     if (savedTasks) {
       try {
-        setTasks(JSON.parse(savedTasks));
-      } catch (e) {}
+        const parsed = JSON.parse(savedTasks);
+        const clean = parsed.filter((t: any) => !t.id?.startsWith("BGV-"));
+        if (clean.length > 0) {
+          setTasks(clean);
+        } else {
+          localStorage.removeItem("a2z_employee_tasks");
+        }
+      } catch (e) { }
     }
 
     fetchTasks();
@@ -133,7 +139,7 @@ export default function EmployeePortal() {
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTask.task.trim()) return;
-    const id = `BGV-${Math.floor(100 + Math.random() * 900)}`;
+    const id = `TSK-${Math.floor(100 + Math.random() * 900)}`;
     const created: VerificationTask = {
       id,
       title: newTask.task.trim(),
@@ -143,7 +149,7 @@ export default function EmployeePortal() {
       assigned_to: currentUser?.id || 'EMP-101',
       employee_name: currentUser?.name || 'Staff Member'
     };
-    
+
     // Update local state first
     const updated = [created, ...tasks];
     saveTasks(updated);
@@ -243,7 +249,7 @@ export default function EmployeePortal() {
     router.push("/login");
   };
 
-  const handleAttendancePunch = async (action: "PUNCH_IN" | "PUNCH_OUT" | "HALF_DAY") => {
+  const handleAttendancePunch = async (action: "PUNCH_IN" | "PUNCH_OUT" | "HALF_DAY" | "ON_LEAVE") => {
     if (!currentUser) return;
 
     const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -255,6 +261,8 @@ export default function EmployeePortal() {
       updates = { check_out_time: nowTime };
     } else if (action === "HALF_DAY") {
       updates = { status: "HALF_DAY", check_in_time: nowTime };
+    } else if (action === "ON_LEAVE") {
+      updates = { status: "ON_LEAVE", check_in_time: "Leave Logged" };
     }
 
     try {
@@ -271,7 +279,8 @@ export default function EmployeePortal() {
         localStorage.setItem("a2z_user", JSON.stringify(updated));
         showToast(
           action === "PUNCH_IN" ? `Punched In recorded at ${nowTime}!` :
-          action === "PUNCH_OUT" ? `Punched Out recorded at ${nowTime}!` : `Half Day logged at ${nowTime}!`
+            action === "PUNCH_OUT" ? `Punched Out recorded at ${nowTime}!` :
+              action === "HALF_DAY" ? `Half Day logged at ${nowTime}!` : `On Leave recorded for today!`
         );
       }
     } catch (err) {
@@ -282,22 +291,23 @@ export default function EmployeePortal() {
   if (!currentUser) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Authenticating credentials...</p>
+        <p style={{ color: '#94a3b8', fontSize: '0.8rem' }}>Authenticating credentials...</p>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: '3rem', position: 'relative', zIndex: 10 }}>
+    <div style={{ minHeight: '100vh', paddingBottom: '3rem', position: 'relative', zIndex: 10, backgroundColor: '#070a10', color: '#ffffff' }}>
       {/* Compact Navbar */}
-      <nav style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        padding: '0.6rem 1.5rem', 
-        borderBottom: '1px solid rgba(0,0,0,0.06)', 
-        background: 'rgba(255,255,255,0.75)', 
-        backdropFilter: 'blur(20px)',
+      <nav style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '0.65rem 1.5rem',
+        background: 'rgba(16, 24, 40, 0.55)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        borderBottom: '1px solid rgba(56, 189, 248, 0.2)',
         position: 'sticky',
         top: 0,
         zIndex: 50
@@ -306,17 +316,17 @@ export default function EmployeePortal() {
           <Link href="/" style={{ textDecoration: 'none' }}>
             <Logo size="sm" showTagline={false} />
           </Link>
-          <span style={{ 
-            background: 'var(--lilac-light)', 
-            color: 'var(--lilac-dark)', 
-            padding: '0.15rem 0.5rem', 
-            borderRadius: '12px', 
-            fontSize: '0.65rem', 
-            fontWeight: 800, 
-            letterSpacing: '0.5px', 
-            textTransform: 'uppercase' 
+          <span style={{
+            background: 'linear-gradient(135deg, #00f5d4, #38bdf8)',
+            color: '#070a10',
+            padding: '0.25rem 0.8rem',
+            borderRadius: '20px',
+            fontSize: '0.75rem',
+            fontWeight: 800,
+            letterSpacing: '1px',
+            textTransform: 'uppercase'
           }}>
-            Staff Portal
+            Employee Portal
           </span>
         </div>
 
@@ -324,7 +334,7 @@ export default function EmployeePortal() {
           {currentUser.role === "ADMIN" && (
             <Link href="/admin" style={{ textDecoration: 'none' }}>
               <button style={{
-                background: 'linear-gradient(135deg, var(--lilac-dark), #9b72cf)',
+                background: 'linear-gradient(135deg, #38bdf8, #9b72cf)',
                 color: '#fff',
                 border: 'none',
                 padding: '0.25rem 0.65rem',
@@ -338,29 +348,31 @@ export default function EmployeePortal() {
             </Link>
           )}
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', color: 'var(--text-primary)', fontWeight: 600 }}>
-            <User size={13} color="var(--lilac-dark)" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', color: '#ffffff', fontWeight: 600 }}>
+            <User size={13} color="#38bdf8" />
             <span>{currentUser.name}</span>
-            <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>({currentUser.id})</span>
+            <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>({currentUser.id})</span>
           </div>
 
-          <button 
+          <button
             onClick={handleLogout}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.3rem', 
-              background: 'rgba(255,255,255,0.9)', 
-              border: '1px solid rgba(0,0,0,0.1)', 
-              color: 'var(--text-primary)', 
-              padding: '0.25rem 0.6rem', 
-              borderRadius: '5px', 
-              cursor: 'pointer', 
-              fontSize: '0.72rem', 
-              fontWeight: 700 
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              background: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid rgba(239, 68, 68, 0.35)',
+              color: '#f87171',
+              padding: '0.35rem 0.75rem',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '0.76rem',
+              fontWeight: 700,
+              boxShadow: '0 2px 10px rgba(239, 68, 68, 0.15)',
+              transition: 'all 0.2s ease'
             }}
           >
-            <LogOut size={12} /> Logout
+            <LogOut size={13} color="#f87171" /> Logout
           </button>
         </div>
       </nav>
@@ -394,19 +406,19 @@ export default function EmployeePortal() {
 
       {/* Small Compact Container */}
       <div style={{ maxWidth: '840px', margin: '1.2rem auto 0 auto', padding: '0 1rem' }}>
-        
-        {/* Small Welcome Card */}
-        <div className="glass-card" style={{ padding: '0.85rem 1.1rem', marginBottom: '1rem', background: 'rgba(255,255,255,0.8)', borderRadius: '12px' }}>
+
+        {/* Modern Welcome Card */}
+        <div className="glass-card" style={{ padding: '1.2rem 1.4rem', marginBottom: '1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', borderRadius: '16px', border: '1px solid rgba(56, 189, 248, 0.22)', boxShadow: '0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem' }}>
             <div>
-              <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--lilac-dark)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Employee Portal
+              <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                Employee Portal • A2Z Software Solutions
               </div>
-              <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', margin: '0.1rem 0' }}>
+              <h2 style={{ fontSize: '1.22rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', margin: '0.2rem 0' }}>
                 Welcome, {currentUser.name}
               </h2>
-              <div style={{ display: 'flex', gap: '0.8rem', color: 'var(--text-secondary)', fontSize: '0.72rem', flexWrap: 'wrap' }}>
-                <span><strong>ID:</strong> {currentUser.id}</span>
+              <div style={{ display: 'flex', gap: '0.8rem', color: '#94a3b8', fontSize: '0.74rem', flexWrap: 'wrap' }}>
+                <span><strong>ID:</strong> <span style={{ color: '#00f5d4', fontWeight: 700 }}>{currentUser.id}</span></span>
                 <span><strong>Role:</strong> {currentUser.role}</span>
                 <span><strong>Dept:</strong> {currentUser.department}</span>
               </div>
@@ -414,27 +426,27 @@ export default function EmployeePortal() {
 
             {/* Small Status Badge */}
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.66rem', color: 'var(--text-secondary)', marginBottom: '0.15rem', fontWeight: 600 }}>
-                Today's Status
+              <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginBottom: '0.25rem', fontWeight: 700 }}>
+                Today's Punch Status
               </div>
               <div>
                 {currentUser.status === "PRESENT" && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: '#d4edda', color: '#155724', padding: '0.22rem 0.65rem', borderRadius: '14px', fontWeight: 800, fontSize: '0.72rem' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: '#dcfce7', color: '#15803d', border: '1px solid #86efac', padding: '0.25rem 0.75rem', borderRadius: '16px', fontWeight: 800, fontSize: '0.74rem', boxShadow: '0 2px 6px rgba(22, 163, 74, 0.15)' }}>
                     <CheckCircle2 size={13} /> PRESENT {currentUser.check_in_time ? `(${currentUser.check_in_time})` : ''}
                   </span>
                 )}
                 {currentUser.status === "HALF_DAY" && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: '#fff3cd', color: '#856404', padding: '0.22rem 0.65rem', borderRadius: '14px', fontWeight: 800, fontSize: '0.72rem' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: '#fef3c7', color: '#b45309', border: '1px solid #fcd34d', padding: '0.25rem 0.75rem', borderRadius: '16px', fontWeight: 800, fontSize: '0.74rem' }}>
                     <Clock3 size={13} /> HALF DAY {currentUser.check_in_time ? `(${currentUser.check_in_time})` : ''}
                   </span>
                 )}
                 {currentUser.status === "ABSENT" && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: '#f8d7da', color: '#721c24', padding: '0.22rem 0.65rem', borderRadius: '14px', fontWeight: 800, fontSize: '0.72rem' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', padding: '0.25rem 0.75rem', borderRadius: '16px', fontWeight: 800, fontSize: '0.74rem' }}>
                     <XCircle size={13} /> ABSENT
                   </span>
                 )}
                 {currentUser.status === "ON_LEAVE" && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: '#fce4ec', color: '#c2185b', padding: '0.22rem 0.65rem', borderRadius: '14px', fontWeight: 800, fontSize: '0.72rem' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: '#fce7f3', color: '#be185d', border: '1px solid #fbcfe8', padding: '0.25rem 0.75rem', borderRadius: '16px', fontWeight: 800, fontSize: '0.74rem' }}>
                     <Clock3 size={13} /> ON LEAVE
                   </span>
                 )}
@@ -444,7 +456,7 @@ export default function EmployeePortal() {
         </div>
 
         {/* Small Navigation Tabs */}
-        <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1rem', flexWrap: 'wrap', borderBottom: '1px solid rgba(0,0,0,0.06)', paddingBottom: '0.3rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.1rem', flexWrap: 'wrap', borderBottom: '1px solid rgba(0,0,0,0.06)', paddingBottom: '0.4rem' }}>
           {[
             { id: "OVERVIEW", label: "Operations & Tasks" },
             { id: "ATTENDANCE", label: "Attendance Punch" },
@@ -455,15 +467,16 @@ export default function EmployeePortal() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               style={{
-                padding: '0.35rem 0.75rem',
-                borderRadius: '6px',
+                padding: '0.4rem 0.85rem',
+                borderRadius: '8px',
                 fontWeight: 700,
-                fontSize: '0.72rem',
+                fontSize: '0.74rem',
                 cursor: 'pointer',
-                transition: 'all 0.15s',
-                background: activeTab === tab.id ? 'var(--lilac-dark)' : 'rgba(255,255,255,0.65)',
-                color: activeTab === tab.id ? '#fff' : 'var(--text-primary)',
-                border: activeTab === tab.id ? 'none' : '1px solid rgba(0,0,0,0.08)'
+                transition: 'all 0.2s ease',
+                background: activeTab === tab.id ? 'linear-gradient(135deg, #00f5d4 0%, #0284c7 100%)' : 'rgba(16, 24, 40, 0.65)',
+                color: activeTab === tab.id ? '#070a10' : '#cbd5e1',
+                border: activeTab === tab.id ? 'none' : '1px solid rgba(56, 189, 248, 0.25)',
+                boxShadow: activeTab === tab.id ? '0 4px 15px rgba(0, 245, 212, 0.3)' : 'none'
               }}
             >
               {tab.label}
@@ -471,16 +484,16 @@ export default function EmployeePortal() {
           ))}
         </div>
 
-        {/* TAB 1: OVERVIEW & BGV INTERNAL QUEUE (With Add Task & Status Switcher) */}
+        {/* TAB 1: OVERVIEW & TASKS QUEUE */}
         {activeTab === "OVERVIEW" && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.9rem' }}>
-            
-            {/* Small Assigned BGV Queue Card */}
-            <div className="glass-card" style={{ padding: '0.9rem 1rem', background: 'rgba(255,255,255,0.8)', borderRadius: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.7rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
+
+            {/* Assigned Tasks Queue Card */}
+            <div className="glass-card" style={{ padding: '1.2rem 1.3rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)', borderRadius: '16px', border: '1px solid rgba(56, 189, 248, 0.25)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <ShieldCheck color="var(--lilac-dark)" size={16} />
-                  <h3 style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                  <ShieldCheck color="#0284c7" size={18} />
+                  <h3 style={{ fontSize: '0.96rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
                     Assigned Tasks Queue ({tasks.length})
                   </h3>
                 </div>
@@ -489,61 +502,62 @@ export default function EmployeePortal() {
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '0.3rem',
-                    padding: '0.3rem 0.65rem',
-                    borderRadius: '6px',
-                    background: 'var(--lilac-dark)',
-                    color: '#fff',
+                    gap: '0.35rem',
+                    padding: '0.35rem 0.75rem',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #00f5d4 0%, #0284c7 100%)',
+                    color: '#070a10', fontWeight: 800,
                     border: 'none',
-                    fontSize: '0.7rem',
+                    fontSize: '0.72rem',
                     fontWeight: 700,
                     cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(122, 91, 156, 0.25)'
+                    boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)'
                   }}
                 >
-                  <Plus size={12} /> Add Task
+                  <Plus size={13} /> Add Task
                 </button>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
                 {tasks.map((item) => (
-                  <div key={item.id} style={{ padding: '0.5rem 0.7rem', background: '#fff', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div key={item.id} style={{ padding: '0.75rem 0.9rem', background: 'rgba(7, 10, 16, 0.65)', borderRadius: '10px', border: '1px solid rgba(56, 189, 248, 0.2)', borderLeft: '4px solid #00f5d4', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ flex: '1 1 auto', minWidth: 0, marginRight: '0.5rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--lilac-dark)' }}>{item.id}</span>
-                        <span style={{ fontWeight: 700, fontSize: '0.74rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title || item.task}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                        <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#00f5d4', background: 'rgba(0, 245, 212, 0.12)', padding: '0.12rem 0.45rem', borderRadius: '4px' }}>{item.id}</span>
+                        <span style={{ fontWeight: 700, fontSize: '0.78rem', color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title || item.task}</span>
                       </div>
-                      <div style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
-                        {item.time} • Priority: <strong style={{ color: item.priority === 'Urgent' ? '#dc3545' : item.priority === 'High' ? '#e67e22' : 'inherit' }}>{item.priority}</strong>
+                      <div style={{ fontSize: '0.66rem', color: '#94a3b8', marginTop: '0.2rem', fontWeight: 600 }}>
+                        {item.time} • Priority: <strong style={{ color: item.priority === 'Urgent' ? '#b91c1c' : item.priority === 'High' ? '#b45309' : '#475569' }}>{item.priority}</strong>
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexShrink: 0 }}>
                       {/* Interactive Status Selector */}
                       <select
                         value={item.status}
                         onChange={(e) => handleUpdateTaskStatus(item.id, e.target.value as any)}
                         style={{
-                          fontSize: '0.66rem',
+                          fontSize: '0.68rem',
                           fontWeight: 700,
-                          padding: '0.2rem 0.4rem',
+                          padding: '0.25rem 0.5rem',
                           borderRadius: '6px',
-                          border: '1px solid rgba(0,0,0,0.12)',
+                          border: '1px solid rgba(56, 189, 248, 0.25)',
                           cursor: 'pointer',
                           outline: 'none',
+                          background: 'rgba(7, 10, 16, 0.85)',
                           background:
-                            item.status === "Verified" ? '#d4edda' :
-                            item.status === "Review" ? '#e8daef' :
-                            item.status === "Blocked" ? '#f8d7da' : '#eaf2f8',
+                            item.status === "Verified" ? 'rgba(0, 245, 212, 0.15)' :
+                              item.status === "Review" ? 'rgba(168, 85, 247, 0.15)' :
+                                item.status === "Blocked" ? 'rgba(239, 68, 68, 0.15)' : 'rgba(56, 189, 248, 0.15)',
                           color:
-                            item.status === "Verified" ? '#155724' :
-                            item.status === "Review" ? '#5b2c6f' :
-                            item.status === "Blocked" ? '#721c24' : '#1b4f72'
+                            item.status === "Verified" ? '#00f5d4' :
+                              item.status === "Review" ? '#c084fc' :
+                                item.status === "Blocked" ? '#f87171' : '#38bdf8'
                         }}
                       >
                         <option value="In Progress">In Progress</option>
                         <option value="Review">Under Review</option>
-                        <option value="Verified">Verified / Done</option>
+                        <option value="Verified">Completed</option>
                         <option value="Blocked">Blocked</option>
                       </select>
 
@@ -551,7 +565,7 @@ export default function EmployeePortal() {
                       <button
                         onClick={() => handleDeleteTask(item.id)}
                         title="Remove Task"
-                        style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.2rem' }}
+                        style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#dc2626', cursor: 'pointer', padding: '0.25rem', borderRadius: '4px' }}
                       >
                         <Trash2 size={12} />
                       </button>
@@ -560,48 +574,48 @@ export default function EmployeePortal() {
                 ))}
 
                 {tasks.length === 0 && (
-                  <div style={{ textAlign: 'center', padding: '1.2rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                  <div style={{ textAlign: 'center', padding: '1.5rem', color: '#94a3b8', fontSize: '0.78rem' }}>
                     No tasks currently assigned. Click <strong>+ Add Task</strong> above to add one!
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Small Quick Actions Card */}
+            {/* Quick Actions Card */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-              <div className="glass-card" style={{ padding: '0.9rem 1rem', background: 'rgba(255,255,255,0.8)', borderRadius: '12px' }}>
-                <h3 style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 0.6rem 0' }}>
+              <div className="glass-card" style={{ padding: '1.2rem 1.3rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)', borderRadius: '16px', border: '1px solid rgba(56, 189, 248, 0.25)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
+                <h3 style={{ fontSize: '0.96rem', fontWeight: 800, color: '#ffffff', margin: '0 0 0.8rem 0' }}>
                   Quick Actions
                 </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                  <button 
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                  <button
                     onClick={() => setActiveTab("ATTENDANCE")}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.55rem 0.75rem', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.08)', background: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: '0.74rem', color: 'var(--text-primary)' }}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1px solid rgba(2, 132, 199, 0.25)', background: 'rgba(7, 10, 16, 0.65)', cursor: 'pointer', fontWeight: 700, fontSize: '0.76rem', color: '#ffffff', transition: 'all 0.2s ease' }}
                   >
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Clock size={13} color="var(--lilac-dark)" /> Record Today's Punch
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Clock size={15} color="#0284c7" /> Record Today's Punch
                     </span>
-                    <ArrowRight size={12} />
+                    <ArrowRight size={13} color="#0284c7" />
                   </button>
 
-                  <button 
+                  <button
                     onClick={() => setActiveTab("CALENDAR")}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.55rem 0.75rem', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.08)', background: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: '0.74rem', color: 'var(--text-primary)' }}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1px solid rgba(139, 92, 246, 0.25)', background: 'rgba(7, 10, 16, 0.65)', cursor: 'pointer', fontWeight: 700, fontSize: '0.76rem', color: '#ffffff', transition: 'all 0.2s ease' }}
                   >
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Calendar size={13} color="var(--lilac-dark)" /> Corporate Holidays
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Calendar size={15} color="#8b5cf6" /> Corporate Holidays
                     </span>
-                    <ArrowRight size={12} />
+                    <ArrowRight size={13} color="#8b5cf6" />
                   </button>
 
-                  <button 
+                  <button
                     onClick={() => setActiveTab("DIRECTORY")}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.55rem 0.75rem', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.08)', background: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: '0.74rem', color: 'var(--text-primary)' }}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.25)', background: 'rgba(7, 10, 16, 0.65)', cursor: 'pointer', fontWeight: 700, fontSize: '0.76rem', color: '#ffffff', transition: 'all 0.2s ease' }}
                   >
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Building size={13} color="var(--lilac-dark)" /> Colleague Directory
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Building size={15} color="#10b981" /> Colleague Directory
                     </span>
-                    <ArrowRight size={12} />
+                    <ArrowRight size={13} color="#10b981" />
                   </button>
                 </div>
               </div>
@@ -610,100 +624,128 @@ export default function EmployeePortal() {
           </div>
         )}
 
-        {/* TAB 2: DAILY ATTENDANCE PUNCH (Punch In, Punch Out, Half Day) */}
+        {/* TAB 2: DAILY ATTENDANCE PUNCH (Punch In, Punch Out, Half Day, On Leave) */}
         {activeTab === "ATTENDANCE" && (
-          <div className="glass-card" style={{ maxWidth: '480px', margin: '0 auto', padding: '1.2rem 1.4rem', textAlign: 'center', background: 'rgba(255,255,255,0.8)', borderRadius: '12px' }}>
-            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'var(--lilac-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.5rem auto' }}>
-              <Clock color="var(--lilac-dark)" size={20} />
+          <div className="glass-card" style={{ maxWidth: '640px', margin: '0 auto', padding: '1.4rem 1.6rem', textAlign: 'center', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '16px' }}>
+            <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'rgba(7, 10, 16, 0.65)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.6rem auto', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
+              <Clock color="#38bdf8" size={22} />
             </div>
 
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.2rem' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.25rem' }}>
               Daily Attendance Clock
             </h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.72rem', marginBottom: '1.1rem' }}>
-              Punch in at start of shift, record punch out, or mark half day.
+            <p style={{ color: '#94a3b8', fontSize: '0.78rem', marginBottom: '1.2rem' }}>
+              Punch in at start of shift, record punch out, mark half day, or apply leave.
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.6rem' }}>
-              
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.7rem' }}>
+
               {/* Punch In */}
               <button
                 onClick={() => handleAttendancePunch("PUNCH_IN")}
                 style={{
-                  padding: '0.8rem 0.5rem',
-                  borderRadius: '8px',
-                  border: '1.5px solid #28a745',
-                  background: currentUser.status === "PRESENT" ? '#d4edda' : '#f4fbf6',
+                  padding: '0.85rem 0.5rem',
+                  borderRadius: '10px',
+                  border: currentUser.status === "PRESENT" ? '1.5px solid #00f5d4' : '1px solid rgba(56, 189, 248, 0.25)',
+                  background: currentUser.status === "PRESENT" ? 'rgba(0, 245, 212, 0.18)' : 'rgba(7, 10, 16, 0.65)',
+                  color: '#ffffff',
                   cursor: 'pointer',
                   transition: 'all 0.15s',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '0.3rem'
+                  gap: '0.35rem',
+                  boxShadow: currentUser.status === "PRESENT" ? '0 0 15px rgba(0, 245, 212, 0.25)' : 'none'
                 }}
               >
-                <CheckCircle2 color="#28a745" size={20} />
-                <div style={{ fontWeight: 800, fontSize: '0.78rem', color: '#155724' }}>Punch In</div>
-                <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>Shift Start</div>
+                <CheckCircle2 color="#00f5d4" size={22} />
+                <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#00f5d4' }}>Punch In</div>
+                <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>Shift Start</div>
               </button>
 
               {/* Punch Out */}
               <button
                 onClick={() => handleAttendancePunch("PUNCH_OUT")}
                 style={{
-                  padding: '0.8rem 0.5rem',
-                  borderRadius: '8px',
-                  border: '1.5px solid var(--lilac-dark)',
-                  background: 'var(--lilac-light)',
+                  padding: '0.85rem 0.5rem',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                  background: 'rgba(7, 10, 16, 0.65)',
+                  color: '#ffffff',
                   cursor: 'pointer',
                   transition: 'all 0.15s',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '0.3rem'
+                  gap: '0.35rem'
                 }}
               >
-                <LogOut color="var(--lilac-dark)" size={20} />
-                <div style={{ fontWeight: 800, fontSize: '0.78rem', color: 'var(--lilac-dark)' }}>Punch Out</div>
-                <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>Shift End</div>
+                <LogOut color="#38bdf8" size={22} />
+                <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#38bdf8' }}>Punch Out</div>
+                <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>Shift End</div>
               </button>
 
               {/* Half Day */}
               <button
                 onClick={() => handleAttendancePunch("HALF_DAY")}
                 style={{
-                  padding: '0.8rem 0.5rem',
-                  borderRadius: '8px',
-                  border: '1.5px solid #ffc107',
-                  background: currentUser.status === "HALF_DAY" ? '#fff3cd' : '#fffdf5',
+                  padding: '0.85rem 0.5rem',
+                  borderRadius: '10px',
+                  border: currentUser.status === "HALF_DAY" ? '1.5px solid #ffc107' : '1px solid rgba(56, 189, 248, 0.25)',
+                  background: currentUser.status === "HALF_DAY" ? 'rgba(245, 158, 11, 0.18)' : 'rgba(7, 10, 16, 0.65)',
+                  color: '#ffffff',
                   cursor: 'pointer',
                   transition: 'all 0.15s',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '0.3rem'
+                  gap: '0.35rem',
+                  boxShadow: currentUser.status === "HALF_DAY" ? '0 0 15px rgba(245, 158, 11, 0.25)' : 'none'
                 }}
               >
-                <Clock3 color="#b58105" size={20} />
-                <div style={{ fontWeight: 800, fontSize: '0.78rem', color: '#856404' }}>Half Day</div>
-                <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>Half Shift</div>
+                <Clock3 color="#fbbf24" size={22} />
+                <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#fbbf24' }}>Half Day</div>
+                <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>Half Shift</div>
+              </button>
+
+              {/* On Leave */}
+              <button
+                onClick={() => handleAttendancePunch("ON_LEAVE")}
+                style={{
+                  padding: '0.85rem 0.5rem',
+                  borderRadius: '10px',
+                  border: currentUser.status === "ON_LEAVE" ? '1.5px solid #ec4899' : '1px solid rgba(56, 189, 248, 0.25)',
+                  background: currentUser.status === "ON_LEAVE" ? 'rgba(236, 72, 153, 0.22)' : 'rgba(7, 10, 16, 0.65)',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  boxShadow: currentUser.status === "ON_LEAVE" ? '0 0 15px rgba(236, 72, 153, 0.25)' : 'none'
+                }}
+              >
+                <Calendar color="#f472b6" size={22} />
+                <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#f472b6' }}>Leave</div>
+                <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>Full Day Off</div>
               </button>
 
             </div>
 
-            <div style={{ marginTop: '1.1rem', padding: '0.5rem 0.8rem', borderRadius: '6px', background: '#fff', border: '1px solid rgba(0,0,0,0.06)', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-              Logged Status: <strong style={{ color: 'var(--text-primary)' }}>{currentUser.status}</strong> {currentUser.check_in_time ? `• Time: ${currentUser.check_in_time}` : ''}
+            <div style={{ marginTop: '1.2rem', padding: '0.6rem 0.9rem', borderRadius: '8px', background: 'rgba(7, 10, 16, 0.65)', border: '1px solid rgba(56, 189, 248, 0.25)', fontSize: '0.74rem', color: '#94a3b8' }}>
+              Logged Status: <strong style={{ color: '#ffffff' }}>{currentUser.status}</strong> {currentUser.check_in_time ? `• Time: ${currentUser.check_in_time}` : ''}
             </div>
           </div>
         )}
 
         {/* TAB 3: COMPANY CALENDAR & HOLIDAYS (Small Cards) */}
         {activeTab === "CALENDAR" && (
-          <div className="glass-card" style={{ padding: '1rem 1.1rem', background: 'rgba(255,255,255,0.8)', borderRadius: '12px' }}>
+          <div className="glass-card" style={{ padding: '1rem 1.1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.9rem' }}>
-              <Calendar color="var(--lilac-dark)" size={16} />
+              <Calendar color="#38bdf8" size={16} />
               <div>
-                <h3 style={{ fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                <h3 style={{ fontSize: '0.98rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
                   Corporate Calendar & Holidays
                 </h3>
               </div>
@@ -711,18 +753,18 @@ export default function EmployeePortal() {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '0.65rem' }}>
               {events.map(ev => (
-                <div key={ev.id} style={{ background: '#fff', padding: '0.65rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)' }}>
+                <div key={ev.id} style={{ background: 'rgba(7, 10, 16, 0.65)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '0.65rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ fontWeight: 800, fontSize: '0.78rem', color: 'var(--text-primary)' }}>{ev.title}</div>
-                    <span style={{ fontSize: '0.6rem', fontWeight: 700, padding: '0.1rem 0.4rem', borderRadius: '10px', background: 'var(--lilac-light)', color: 'var(--lilac-dark)' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.78rem', color: '#ffffff' }}>{ev.title}</div>
+                    <span style={{ fontSize: '0.6rem', fontWeight: 700, padding: '0.1rem 0.4rem', borderRadius: '10px', background: 'var(--lilac-light)', color: '#38bdf8' }}>
                       {ev.type}
                     </span>
                   </div>
-                  <div style={{ color: 'var(--lilac-dark)', fontWeight: 800, fontSize: '0.7rem', marginTop: '0.2rem' }}>
+                  <div style={{ color: '#38bdf8', fontWeight: 800, fontSize: '0.7rem', marginTop: '0.2rem' }}>
                     📅 {ev.date}
                   </div>
                   {ev.description && (
-                    <div style={{ fontSize: '0.66rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                    <div style={{ fontSize: '0.66rem', color: '#94a3b8', marginTop: '0.2rem' }}>
                       {ev.description}
                     </div>
                   )}
@@ -734,11 +776,11 @@ export default function EmployeePortal() {
 
         {/* TAB 4: STAFF DIRECTORY (Small Table Card) */}
         {activeTab === "DIRECTORY" && (
-          <div className="glass-card" style={{ padding: '1rem 1.1rem', background: 'rgba(255,255,255,0.8)', borderRadius: '12px', overflowX: 'auto' }}>
+          <div className="glass-card" style={{ padding: '1rem 1.1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', overflowX: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.9rem' }}>
-              <Building color="var(--lilac-dark)" size={16} />
+              <Building color="#38bdf8" size={16} />
               <div>
-                <h3 style={{ fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                <h3 style={{ fontSize: '0.98rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
                   Staff Directory
                 </h3>
               </div>
@@ -746,7 +788,7 @@ export default function EmployeePortal() {
 
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', color: 'var(--text-secondary)', fontSize: '0.68rem', textTransform: 'uppercase' }}>
+                <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', color: '#94a3b8', fontSize: '0.68rem', textTransform: 'uppercase' }}>
                   <th style={{ padding: '0.4rem 0.5rem' }}>ID</th>
                   <th style={{ padding: '0.4rem 0.5rem' }}>Name</th>
                   <th style={{ padding: '0.4rem 0.5rem' }}>Role</th>
@@ -757,11 +799,11 @@ export default function EmployeePortal() {
               <tbody>
                 {directory.map(emp => (
                   <tr key={emp.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.03)', fontSize: '0.72rem' }}>
-                    <td style={{ padding: '0.45rem 0.5rem', fontWeight: 800, color: 'var(--lilac-dark)' }}>{emp.id}</td>
-                    <td style={{ padding: '0.45rem 0.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{emp.name}</td>
-                    <td style={{ padding: '0.45rem 0.5rem', color: 'var(--text-primary)' }}>{emp.role}</td>
-                    <td style={{ padding: '0.45rem 0.5rem', color: 'var(--text-secondary)' }}>{emp.department}</td>
-                    <td style={{ padding: '0.45rem 0.5rem', color: 'var(--text-secondary)' }}>{emp.email}</td>
+                    <td style={{ padding: '0.45rem 0.5rem', fontWeight: 800, color: '#38bdf8' }}>{emp.id}</td>
+                    <td style={{ padding: '0.45rem 0.5rem', fontWeight: 700, color: '#ffffff' }}>{emp.name}</td>
+                    <td style={{ padding: '0.45rem 0.5rem', color: '#ffffff' }}>{emp.role}</td>
+                    <td style={{ padding: '0.45rem 0.5rem', color: '#94a3b8' }}>{emp.department}</td>
+                    <td style={{ padding: '0.45rem 0.5rem', color: '#94a3b8' }}>{emp.email}</td>
                   </tr>
                 ))}
               </tbody>
@@ -791,7 +833,7 @@ export default function EmployeePortal() {
               exit={{ scale: 0.95, opacity: 0 }}
               className="glass-card"
               style={{
-                background: '#ffffff',
+                background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', backdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)',
                 width: '100%',
                 maxWidth: '420px',
                 padding: '1.4rem 1.6rem',
@@ -800,12 +842,12 @@ export default function EmployeePortal() {
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
                   + Add New Task
                 </h3>
-                <button 
+                <button
                   onClick={() => setShowAddTaskModal(false)}
-                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
                 >
                   <X size={20} />
                 </button>
@@ -813,28 +855,28 @@ export default function EmployeePortal() {
 
               <form onSubmit={handleAddTask} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: '#ffffff', marginBottom: '0.25rem' }}>
                     Task Title / Check Description *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Court Criminal Registry Scan"
+                    placeholder="e.g. Next.js API Architecture Sprint"
                     value={newTask.task}
                     onChange={e => setNewTask({ ...newTask, task: e.target.value })}
-                    style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(7, 10, 16, 0.75)', color: '#ffffff', borderRadius: '8px', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
                   />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: '#ffffff', marginBottom: '0.25rem' }}>
                       Priority
                     </label>
                     <select
                       value={newTask.priority}
                       onChange={e => setNewTask({ ...newTask, priority: e.target.value as any })}
-                      style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
+                      style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(7, 10, 16, 0.75)', color: '#ffffff', borderRadius: '8px', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
                     >
                       <option value="Urgent">🔴 Urgent</option>
                       <option value="High">🟠 High</option>
@@ -842,7 +884,7 @@ export default function EmployeePortal() {
                     </select>
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: '#ffffff', marginBottom: '0.25rem' }}>
                       Target SLA
                     </label>
                     <input
@@ -850,19 +892,19 @@ export default function EmployeePortal() {
                       placeholder="e.g. SLA: 4h"
                       value={newTask.time}
                       onChange={e => setNewTask({ ...newTask, time: e.target.value })}
-                      style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
+                      style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(7, 10, 16, 0.75)', color: '#ffffff', borderRadius: '8px', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: '#ffffff', marginBottom: '0.25rem' }}>
                     Initial Status
                   </label>
                   <select
                     value={newTask.status}
                     onChange={e => setNewTask({ ...newTask, status: e.target.value as any })}
-                    style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(7, 10, 16, 0.75)', color: '#ffffff', borderRadius: '8px', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
                   >
                     <option value="In Progress">🔵 In Progress</option>
                     <option value="Review">🟣 Under Review</option>
@@ -875,7 +917,7 @@ export default function EmployeePortal() {
                   <button
                     type="button"
                     onClick={() => setShowAddTaskModal(false)}
-                    style={{ padding: '0.55rem 1rem', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)', background: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: '0.76rem' }}
+                    style={{ padding: '0.55rem 1rem', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)', background: 'rgba(7, 10, 16, 0.65)', border: '1px solid rgba(56, 189, 248, 0.25)', cursor: 'pointer', fontWeight: 600, fontSize: '0.76rem' }}
                   >
                     Cancel
                   </button>

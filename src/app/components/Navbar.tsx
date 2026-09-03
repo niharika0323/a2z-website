@@ -91,7 +91,7 @@ export default function Navbar() {
             { href: "/#home", label: "Home" },
             { href: "/#about", label: "About" },
             { href: "/#services", label: "Services" },
-            { href: "/#portfolio", label: "BGV Platform" },
+            { href: "/#portfolio", label: "Case Studies" },
             { href: "/#contact", label: "Contact" }
           ].map(item => (
             <li key={item.label}>

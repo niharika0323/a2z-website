@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%">
+  <defs>
+    <!-- Intense Neon Filters -->
+    <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur1" />
+      <feGaussianBlur stdDeviation="12" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur2" />
+        <feMergeNode in="blur1" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Gradients -->
+    <linearGradient id="cyanTrace" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00f5d4" stop-opacity="0.2" />
+      <stop offset="40%" stop-color="#00f5d4" stop-opacity="1" />
+      <stop offset="70%" stop-color="#38bdf8" stop-opacity="1" />
+      <stop offset="100%" stop-color="#00f5d4" stop-opacity="0.2" />
+    </linearGradient>
+
+    <linearGradient id="purpleTrace" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d946ef" stop-opacity="0.2" />
+      <stop offset="50%" stop-color="#a855f7" stop-opacity="1" />
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.2" />
+    </linearGradient>
+
+    <pattern id="dotMatrix" x="0" y="0" width="48" height="48" patternUnits="userSpaceOnUse">
+      <circle cx="24" cy="24" r="1.8" fill="#38bdf8" opacity="0.5" />
+      <line x1="22" y1="24" x2="26" y2="24" stroke="#00f5d4" stroke-width="0.8" opacity="0.4" />
+      <line x1="24" y1="22" x2="24" y2="26" stroke="#00f5d4" stroke-width="0.8" opacity="0.4" />
+    </pattern>
+
+    <style>
+      @keyframes trace1 {
+        0% { stroke-dashoffset: 1400; }
+        100% { stroke-dashoffset: 0; }
+      }
+      @keyframes trace2 {
+        0% { stroke-dashoffset: 0; }
+        100% { stroke-dashoffset: 1600; }
+      }
+      @keyframes pulseNode {
+        0%, 100% { transform: scale(1); opacity: 0.6; }
+        50% { transform: scale(1.3); opacity: 1; filter: drop-shadow(0 0 12px #00f5d4); }
+      }
+      @keyframes rotClock {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      @keyframes rotCounter {
+        0% { transform: rotate(360deg); }
+        100% { transform: rotate(0deg); }
+      }
+      @keyframes laserScan {
+        0% { transform: translateY(-100%); opacity: 0; }
+        20% { opacity: 0.8; }
+        80% { opacity: 0.8; }
+        100% { transform: translateY(1100px); opacity: 0; }
+      }
+
+      .trace-flow-1 {
+        stroke-dasharray: 160, 260;
+        animation: trace1 7s linear infinite;
+      }
+      .trace-flow-2 {
+        stroke-dasharray: 180, 280;
+        animation: trace2 9s linear infinite;
+      }
+      .pulse-chip {
+        transform-origin: center;
+        animation: pulseNode 3s ease-in-out infinite;
+      }
+      .hud-clock {
+        transform-origin: 0 0;
+        animation: rotClock 24s linear infinite;
+      }
+      .hud-counter {
+        transform-origin: 0 0;
+        animation: rotCounter 18s linear infinite;
+      }
+      .scan-line {
+        animation: laserScan 8s ease-in-out infinite;
+      }
+    </style>
+  </defs>
+
+  <!-- Deep Obsidian Backdrop -->
+  <rect width="100%" height="100%" fill="#070a10" />
+
+  <!-- Dot Matrix Grid -->
+  <rect width="100%" height="100%" fill="url(#dotMatrix)" />
+
+  <!-- Ambient Holographic Cyber Beams -->
+  <g opacity="0.45" filter="url(#neonGlow)">
+    <polygon points="150,-50 650,-50 1150,1150 650,1150" fill="url(#cyanTrace)" opacity="0.25" />
+    <polygon points="1200,-50 1700,-50 1950,1150 1450,1150" fill="url(#purpleTrace)" opacity="0.2" />
+  </g>
+
+  <!-- Rotating Cyber HUD Circles -->
+  <g transform="translate(180, 260)" opacity="0.6">
+    <circle class="hud-clock" r="120" fill="none" stroke="#00f5d4" stroke-width="1.5" stroke-dasharray="8, 12" />
+    <circle class="hud-counter" r="95" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="30, 20" />
+    <circle class="pulse-chip" r="6" fill="#00f5d4" />
+  </g>
+
+  <g transform="translate(1740, 780)" opacity="0.6">
+    <circle class="hud-counter" r="140" fill="none" stroke="#d946ef" stroke-width="1.5" stroke-dasharray="10, 15" />
+    <circle class="hud-clock" r="105" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="40, 25" />
+    <circle class="pulse-chip" r="7" fill="#d946ef" />
+  </g>
+
+  <!-- Static High-Visibility Base Traces -->
+  <g fill="none" stroke-width="2" opacity="0.4">
+    <path stroke="#00f5d4" d="M -50,220 L 420,220 L 580,380 L 1340,380 L 1500,220 L 2000,220" />
+    <path stroke="#38bdf8" d="M -50,520 L 520,520 L 680,680 L 1240,680 L 1400,840 L 2000,840" />
+    <path stroke="#d946ef" d="M 150,-50 L 150,340 L 380,570 L 1540,570 L 1770,800 L 1770,1150" />
+  </g>
+
+  <!-- Animated High-Energy Flowing Circuit Traces -->
+  <g fill="none" stroke-width="3.5" filter="url(#neonGlow)">
+    <path class="trace-flow-1" stroke="url(#cyanTrace)" d="M -50,220 L 420,220 L 580,380 L 1340,380 L 1500,220 L 2000,220" />
+    <path class="trace-flow-2" stroke="url(#purpleTrace)" d="M -50,520 L 520,520 L 680,680 L 1240,680 L 1400,840 L 2000,840" />
+    <path class="trace-flow-1" stroke="url(#cyanTrace)" d="M 150,-50 L 150,340 L 380,570 L 1540,570 L 1770,800 L 1770,1150" />
+  </g>
+
+  <!-- Pulsing Nodes -->
+  <g filter="url(#neonGlow)">
+    <circle class="pulse-chip" cx="420" cy="220" r="7" fill="#00f5d4" />
+    <circle class="pulse-chip" cx="1340" cy="380" r="7" fill="#38bdf8" />
+    <circle class="pulse-chip" cx="520" cy="520" r="7" fill="#d946ef" />
+    <circle class="pulse-chip" cx="1240" cy="680" r="7" fill="#00f5d4" />
+  </g>
+
+  <!-- Telemetry text -->
+  <g fill="#38bdf8" opacity="0.75" font-size="11" font-family="monospace" font-weight="bold">
+    <text x="70" y="150">[SYS.KERNEL_INITIALIZED]</text>
+    <text x="70" y="170">FREQ // 4.80 GHz • VOLT // 1.25V</text>
+    <text x="1680" y="150" text-anchor="end">[GRID_MATRIX: ACTIVE]</text>
+    <text x="1680" y="170" text-anchor="end">LATENCY // 1.2ms • 01011001</text>
+  </g>
+
+  <!-- Laser Scanline -->
+  <line class="scan-line" x1="0" y1="0" x2="1920" y2="0" stroke="url(#cyanTrace)" stroke-width="2.5" opacity="0.65" filter="url(#neonGlow)" />
+</svg>

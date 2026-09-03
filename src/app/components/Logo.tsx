@@ -92,13 +92,13 @@ export default function Logo({ size = "md", showTagline = false }: LogoProps) {
             style={{
               fontSize: "0.68rem",
               fontWeight: 700,
-              color: "var(--lilac-dark)",
+              color: "#38bdf8",
               letterSpacing: "1px",
               textTransform: "uppercase",
               marginTop: "-2px"
             }}
           >
-            Enterprise BGV Platform
+            Enterprise Solutions Platform
           </span>
         )}
       </div>

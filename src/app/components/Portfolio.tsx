@@ -90,55 +90,55 @@ export default function Portfolio() {
     { month: "Dec", heightPct: 0, amount: "$0" },
   ];
 
-  const bgvPillars = [
+  const techPillars = [
     {
-      id: "identity",
+      id: "web-dev",
+      icon: Layers,
+      title: "Full-Stack Web Development",
+      desc: "High-throughput web applications with Next.js Turbopack, React, Node.js, and TypeScript, engineered for lightning speed and conversion.",
+      metric: "Sub-Second Latency"
+    },
+    {
+      id: "mobile-dev",
       icon: UserCheck,
-      title: "Identity & Biometric KYC",
-      desc: "Instant API queries across Aadhaar (UIDAI), PAN (NSDL), Passport, and Voter ID with AI facial liveness detection.",
-      metric: "99.8% Accuracy"
+      title: "Mobile App Engineering",
+      desc: "Intuitive, fluid mobile experiences built with React Native and Flutter with native hardware integration, offline cache, and push sync.",
+      metric: "iOS & Android"
     },
     {
-      id: "criminal",
-      icon: Scale,
-      title: "Criminal & Court Records",
-      desc: "Forensic cross-referencing across 10,000+ District Courts, High Courts, and Supreme Court e-Courts registries.",
-      metric: "750+ Districts"
-    },
-    {
-      id: "employment",
+      id: "cloud-api",
       icon: Building2,
-      title: "Employment & EPF Forensics",
-      desc: "Direct EPFO / UAN database records verifying service periods, active employers, and salary slip integrity.",
-      metric: "EPFO Cross-Check"
+      title: "Cloud Backends & REST APIs",
+      desc: "High-concurrency microservices with automated rate-limiting, secure OAuth2 authentication, and seamless payment gateway integrations.",
+      metric: "REST & GraphQL"
     },
     {
-      id: "education",
+      id: "saas-portals",
       icon: GraduationCap,
-      title: "Academic & Degree Validation",
-      desc: "Roll-number and credential authentication across 1,200+ universities, state boards, and diploma blacklist repositories.",
-      metric: "1,200+ Universities"
+      title: "Enterprise SaaS & Portals",
+      desc: "Tailored operations management platforms, bespoke CRM/ERP consoles, role-based access control (RBAC), and live analytics dashboards.",
+      metric: "Multi-Tenant Scalability"
     },
     {
-      id: "address",
-      icon: MapPin,
-      title: "Geo-Tagged Address Check",
-      desc: "Digital GPS geo-fencing combined with ground officers capturing timestamped photographic proof of residency.",
-      metric: "GPS Lat/Long Stamped"
+      id: "devops",
+      icon: Scale,
+      title: "DevOps & Cloud Infrastructure",
+      desc: "Containerized deployments with automated testing, zero-downtime CI/CD pipelines, AWS/GCP cloud orchestration, and 99.9% uptime.",
+      metric: "AWS, Docker & K8s"
     },
     {
-      id: "sanctions",
-      icon: ShieldCheck,
-      title: "Global AML & Sanctions",
-      desc: "Screening against Interpol Red Notices, OFAC, UN Sanctions, RBI Defaulters, and PEP registers.",
-      metric: "50+ Watchlists"
+      id: "database",
+      icon: BarChart3,
+      title: "Database Architecture",
+      desc: "High-performance PostgreSQL and NoSQL database schemas, Redis caching layers, automated backups, and real-time WebSocket event streaming.",
+      metric: "PostgreSQL & Redis"
     }
   ];
 
   return (
     <section id="portfolio" className="section" style={{ background: 'transparent', padding: '5rem 1.5rem', position: 'relative' }}>
       
-      {/* Section Header */}
+      {/* Section Header: Featured Case Study / Client Project */}
       <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
         <motion.div
           initial={{ opacity: 0, y: 15 }}
@@ -163,7 +163,7 @@ export default function Portfolio() {
             boxShadow: '0 0 20px rgba(56, 189, 248, 0.2)'
           }}
         >
-          <Sparkles size={14} color="#38bdf8" /> Product Console
+          <Sparkles size={14} color="#38bdf8" /> Featured Client Case Study
         </motion.div>
         
         <motion.h2 
@@ -173,17 +173,17 @@ export default function Portfolio() {
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          Enterprise <span className="text-gradient">BGV Operations Platform</span>
+          Enterprise Web Application: <span className="text-gradient">BGV Operations Platform</span>
         </motion.h2>
 
         <motion.p
-          style={{ maxWidth: '680px', margin: '0.8rem auto 0 auto', color: '#94a3b8', fontSize: '1.05rem', lineHeight: 1.7 }}
+          style={{ maxWidth: '720px', margin: '0.8rem auto 0 auto', color: '#94a3b8', fontSize: '1.05rem', lineHeight: 1.7 }}
           initial={{ opacity: 0, y: 15 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          High-security background verification and forensic investigation suite with real-time turnaround monitoring and automated e-Courts checks.
+          A live look at an enterprise-grade cloud verification and operations portal custom-built by A2Z Software Solutions for our corporate client — featuring real-time workload orchestration, automated pipelines, and operational analytics.
         </motion.p>
       </div>
 
@@ -555,46 +555,120 @@ export default function Portfolio() {
         </div>
       </motion.div>
 
+      {/* 3D App & Web Architecture Showcase Visual Card */}
+      <motion.div
+        className="glass-card"
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ duration: 0.7 }}
+        style={{
+          maxWidth: '980px',
+          margin: '0 auto 4rem auto',
+          borderRadius: '20px',
+          overflow: 'hidden',
+          border: '1px solid rgba(56, 189, 248, 0.35)',
+          position: 'relative',
+          boxShadow: '0 25px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(56, 189, 248, 0.15)'
+        }}
+      >
+        <div style={{ position: 'relative', height: '340px', overflow: 'hidden' }}>
+          <img 
+            src="/app-showcase-3d.jpg" 
+            alt="A2Z Modern Web and Mobile Application Architecture" 
+            style={{ 
+              width: '100%', 
+              height: '100%', 
+              objectFit: 'cover', 
+              objectPosition: 'center 60%',
+              filter: 'brightness(0.92) contrast(1.15)'
+            }} 
+          />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(7,10,16,0.95) 0%, rgba(7,10,16,0.3) 50%, transparent 100%)' }} />
+          
+          <div style={{ position: 'absolute', bottom: '1.8rem', left: '1.8rem', right: '1.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1.2rem' }}>
+            <div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(56, 189, 248, 0.2)', border: '1px solid rgba(56, 189, 248, 0.4)', padding: '0.3rem 0.8rem', borderRadius: '50px', color: '#38bdf8', fontSize: '0.75rem', fontWeight: 800, marginBottom: '0.6rem', letterSpacing: '1px' }}>
+                <Sparkles size={12} color="#00f5d4" /> NEXT-GEN MULTI-PLATFORM ECOSYSTEM
+              </div>
+              <h3 style={{ fontSize: 'clamp(1.2rem, 2.5vw, 1.7rem)', fontWeight: 800, color: '#ffffff', lineHeight: 1.2, margin: 0 }}>
+                High-Performance Web & Mobile App Ecosystems
+              </h3>
+              <p style={{ color: '#cbd5e1', fontSize: '0.88rem', margin: '0.4rem 0 0 0', maxWidth: '580px', lineHeight: 1.6 }}>
+                Engineered with reactive state engines, native device APIs, sub-millisecond cloud databases, and automated zero-downtime deployment pipelines.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
+              <div style={{ background: 'rgba(16, 24, 40, 0.8)', border: '1px solid rgba(0, 245, 212, 0.4)', borderRadius: '10px', padding: '0.5rem 0.9rem', color: '#00f5d4', fontSize: '0.78rem', fontWeight: 800 }}>
+                ⚡ iOS & Android SDK
+              </div>
+              <div style={{ background: 'rgba(16, 24, 40, 0.8)', border: '1px solid rgba(56, 189, 248, 0.4)', borderRadius: '10px', padding: '0.5rem 0.9rem', color: '#38bdf8', fontSize: '0.78rem', fontWeight: 800 }}>
+                🚀 99.9% Uptime SLA
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
       {/* COMPACT BELOW CARDS (6 Forensic Verification Engines in Dark Glassmorphism) */}
       <div style={{ maxWidth: '980px', margin: '0 auto 2rem auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>
-            Core Verification Engines
+            Our Core Development Capabilities
           </h3>
         </div>
 
-        {/* Compact 3-column / responsive grid with dark futuristic cards */}
+        {/* Compact 3-column / responsive grid with dark futuristic development cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.2rem' }}>
-          {bgvPillars.map((pillar) => {
+          {techPillars.map((pillar, idx) => {
             const Icon = pillar.icon;
             return (
-              <div
+              <motion.div
                 key={pillar.id}
                 className="glass-card"
+                initial={{ opacity: 0, y: 25 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-30px" }}
+                whileHover={{ 
+                  y: -6, 
+                  scale: 1.02, 
+                  borderColor: 'rgba(56, 189, 248, 0.45)',
+                  boxShadow: '0 20px 45px rgba(0, 0, 0, 0.6), 0 0 25px rgba(56, 189, 248, 0.2)'
+                }}
+                transition={{ 
+                  duration: 0.45, 
+                  delay: (idx % 3) * 0.08 
+                }}
                 style={{
                   padding: '1.3rem',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   gap: '0.8rem',
-                  borderRadius: '16px'
+                  borderRadius: '16px',
+                  cursor: 'pointer'
                 }}
               >
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', marginBottom: '0.6rem' }}>
-                    <div style={{ 
-                      width: '36px', 
-                      height: '36px', 
-                      borderRadius: '10px', 
-                      background: 'rgba(56, 189, 248, 0.15)', 
-                      border: '1px solid rgba(56, 189, 248, 0.3)',
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center', 
-                      flexShrink: 0 
-                    }}>
+                    <motion.div 
+                      whileHover={{ rotate: 10, scale: 1.12 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                      style={{ 
+                        width: '36px', 
+                        height: '36px', 
+                        borderRadius: '10px', 
+                        background: 'rgba(56, 189, 248, 0.15)', 
+                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        flexShrink: 0 
+                      }}
+                    >
                       <Icon size={18} color="#38bdf8" />
-                    </div>
+                    </motion.div>
                     <div>
                       <h4 style={{ fontSize: '0.98rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.2 }}>
                         {pillar.title}
@@ -612,9 +686,9 @@ export default function Portfolio() {
 
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.74rem', color: '#cbd5e1', fontWeight: 600 }}>
                   <CheckCircle2 size={14} color="#00f5d4" />
-                  <span>Primary API Query</span>
+                  <span>Production Ready</span>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
