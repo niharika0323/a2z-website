@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, name, username, password, role, department, email, phone, status } = body;
+    const { id, name, username, password, role, email, phone, status } = body;
 
     if (!name || !username || !role || !email) {
       return NextResponse.json(
@@ -69,7 +69,6 @@ export async function POST(req: NextRequest) {
       username: username.trim().toLowerCase(),
       password: password?.trim() || 'password123',
       role: role.trim(),
-      department: department?.trim() || 'Operations',
       email: email.trim(),
       phone: phone?.trim() || '',
       status: status || '',

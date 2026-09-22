@@ -8,7 +8,6 @@ export interface Employee {
   username: string;
   password?: string;
   role: string;
-  department: string;
   email: string;
   phone: string;
   status: 'PRESENT' | 'ABSENT' | 'ON_LEAVE' | 'HALF_DAY' | '' | string;
@@ -88,7 +87,7 @@ function getClient(): Client {
 }
 
 async function initializeSchema(client: Client) {
-  // Create tables
+  // Create tables without department column
   await client.execute(`
     CREATE TABLE IF NOT EXISTS employees (
       id TEXT PRIMARY KEY,
@@ -96,7 +95,6 @@ async function initializeSchema(client: Client) {
       username TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
       role TEXT NOT NULL,
-      department TEXT NOT NULL,
       email TEXT NOT NULL,
       phone TEXT DEFAULT '',
       status TEXT DEFAULT '',
@@ -105,6 +103,11 @@ async function initializeSchema(client: Client) {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  // Drop department column if migrating existing table on Turso / SQLite
+  try {
+    await client.execute('ALTER TABLE employees DROP COLUMN department');
+  } catch {}
 
   await client.execute(`
     CREATE TABLE IF NOT EXISTS company_events (
@@ -138,15 +141,14 @@ async function initializeSchema(client: Client) {
 
   if (adminCheck.rows.length === 0) {
     await client.execute({
-      sql: `INSERT INTO employees (id, name, username, password, role, department, email, phone, status, check_in_time)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO employees (id, name, username, password, role, email, phone, status, check_in_time)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         'ADM-001',
         'System Administrator',
         'admin',
         'admin',
         'ADMIN',
-        'Executive Management',
         'admin@a2z.com',
         '+91 90158 21469',
         'PRESENT',
@@ -161,17 +163,17 @@ async function initializeSchema(client: Client) {
 
   if (count <= 1) {
     const seedEmployees = [
-      ['EMP-101', 'Alok Kumar', 'alok', 'password123', 'Senior BGV Verification Engineer', 'Engineering & Core Tech', 'alok@a2z.com', '+91 98765 43210', 'PRESENT', '09:12 AM'],
-      ['EMP-102', 'Niharika Singh', 'niharika', 'password123', 'BGV Product Manager', 'Product & Verification Strategy', 'niharika@a2z.com', '+91 98765 43211', 'PRESENT', '09:28 AM'],
-      ['EMP-103', 'Rahul Verma', 'rahul', 'password123', 'Lead Forensic BGV Checker', 'Quality & Checker Operations', 'rahul.v@a2z.com', '+91 98765 43212', 'ABSENT', ''],
-      ['EMP-104', 'Priya Sharma', 'priya', 'password123', 'Compliance & Legal Risk Specialist', 'Legal & Compliance', 'priya.s@a2z.com', '+91 98765 43213', 'ON_LEAVE', ''],
-      ['EMP-105', 'Amit Patel', 'amit', 'password123', 'Distributed Systems Architect', 'Engineering & Core Tech', 'amit.p@a2z.com', '+91 98765 43214', 'PRESENT', '09:05 AM'],
+      ['EMP-101', 'Alok Kumar', 'alok', 'password123', 'Senior BGV Verification Engineer', 'alok@a2z.com', '+91 98765 43210', 'PRESENT', '09:12 AM'],
+      ['EMP-102', 'Niharika Singh', 'niharika', 'password123', 'BGV Product Manager', 'niharika@a2z.com', '+91 98765 43211', 'PRESENT', '09:28 AM'],
+      ['EMP-103', 'Rahul Verma', 'rahul', 'password123', 'Lead Forensic BGV Checker', 'rahul.v@a2z.com', '+91 98765 43212', 'ABSENT', ''],
+      ['EMP-104', 'Priya Sharma', 'priya', 'password123', 'Compliance & Legal Risk Specialist', 'priya.s@a2z.com', '+91 98765 43213', 'ON_LEAVE', ''],
+      ['EMP-105', 'Amit Patel', 'amit', 'password123', 'Distributed Systems Architect', 'amit.p@a2z.com', '+91 98765 43214', 'PRESENT', '09:05 AM'],
     ];
 
     for (const emp of seedEmployees) {
       await client.execute({
-        sql: `INSERT OR IGNORE INTO employees (id, name, username, password, role, department, email, phone, status, check_in_time)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        sql: `INSERT OR IGNORE INTO employees (id, name, username, password, role, email, phone, status, check_in_time)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         args: emp,
       });
     }
@@ -230,7 +232,7 @@ export const db = {
   // EMPLOYEE METHODS
   async getEmployees(options?: { status?: string; search?: string }): Promise<Employee[]> {
     const client = await getDb();
-    let query = 'SELECT id, name, username, role, department, email, phone, status, check_in_time, check_out_time, created_at FROM employees WHERE 1=1';
+    let query = 'SELECT id, name, username, role, email, phone, status, check_in_time, check_out_time, created_at FROM employees WHERE 1=1';
     const params: (string | number)[] = [];
 
     if (options?.status && options.status !== 'ALL') {
@@ -239,9 +241,9 @@ export const db = {
     }
 
     if (options?.search) {
-      query += ' AND (name LIKE ? OR username LIKE ? OR id LIKE ? OR department LIKE ? OR role LIKE ?)';
+      query += ' AND (name LIKE ? OR username LIKE ? OR id LIKE ? OR role LIKE ?)';
       const term = `%${options.search}%`;
-      params.push(term, term, term, term, term);
+      params.push(term, term, term, term);
     }
 
     query += ' ORDER BY created_at ASC';
@@ -252,7 +254,7 @@ export const db = {
   async getEmployeeById(id: string): Promise<Employee | undefined> {
     const client = await getDb();
     const res = await client.execute({
-      sql: 'SELECT id, name, username, role, department, email, phone, status, check_in_time, check_out_time FROM employees WHERE id = ?',
+      sql: 'SELECT id, name, username, role, email, phone, status, check_in_time, check_out_time FROM employees WHERE id = ?',
       args: [id],
     });
     return res.rows[0] as unknown as Employee | undefined;
@@ -309,7 +311,6 @@ export const db = {
     username: string;
     password?: string;
     role: string;
-    department?: string;
     email: string;
     phone?: string;
     status?: 'PRESENT' | 'ABSENT' | 'ON_LEAVE' | 'HALF_DAY';
@@ -328,22 +329,20 @@ export const db = {
     }
 
     const password = data.password || 'password123';
-    const department = data.department?.trim() || 'Operations';
     const status = data.status || '';
     const checkIn = (status === 'PRESENT' || status === 'HALF_DAY') 
       ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
       : '';
 
     await client.execute({
-      sql: `INSERT INTO employees (id, name, username, password, role, department, email, phone, status, check_in_time)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO employees (id, name, username, password, role, email, phone, status, check_in_time)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         empId,
         data.name,
         data.username.trim().toLowerCase(),
         password,
         data.role,
-        department,
         data.email,
         data.phone || '',
         status,
@@ -364,7 +363,6 @@ export const db = {
 
     if (updates.name !== undefined) { fields.push('name = ?'); values.push(updates.name); }
     if (updates.role !== undefined) { fields.push('role = ?'); values.push(updates.role); }
-    if (updates.department !== undefined) { fields.push('department = ?'); values.push(updates.department); }
     if (updates.email !== undefined) { fields.push('email = ?'); values.push(updates.email); }
     if (updates.phone !== undefined) { fields.push('phone = ?'); values.push(updates.phone); }
     if (updates.password !== undefined) { fields.push('password = ?'); values.push(updates.password); }

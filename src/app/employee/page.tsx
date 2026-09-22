@@ -33,7 +33,6 @@ interface Employee {
   name: string;
   username: string;
   role: string;
-  department: string;
   email: string;
   phone: string;
   status: "PRESENT" | "ABSENT" | "ON_LEAVE" | "HALF_DAY" | "" | string;
@@ -309,7 +308,6 @@ export default function EmployeePortal() {
 
   const filteredDirectory = directory.filter(e => 
     e.name.toLowerCase().includes(directorySearch.toLowerCase()) ||
-    e.department.toLowerCase().includes(directorySearch.toLowerCase()) ||
     e.role.toLowerCase().includes(directorySearch.toLowerCase())
   );
 
@@ -472,7 +470,6 @@ export default function EmployeePortal() {
               </h2>
               <div style={{ display: 'flex', gap: '1.2rem', color: '#94a3b8', fontSize: '0.82rem', marginTop: '0.4rem', flexWrap: 'wrap' }}>
                 <span><strong>Role:</strong> <span style={{ color: '#cbd5e1' }}>{currentUser.role}</span></span>
-                <span><strong>Department:</strong> <span style={{ color: '#cbd5e1' }}>{currentUser.department}</span></span>
                 <span><strong>Email:</strong> <span style={{ color: '#cbd5e1' }}>{currentUser.email}</span></span>
               </div>
             </div>
@@ -995,9 +992,6 @@ export default function EmployeePortal() {
                     </div>
                     <div style={{ fontSize: '0.88rem', color: '#38bdf8', fontWeight: 600, marginTop: '0.15rem' }}>
                       {emp.role}
-                    </div>
-                    <div style={{ fontSize: '0.82rem', color: '#94a3b8', marginTop: '0.3rem' }}>
-                      {emp.department}
                     </div>
                     <div style={{ fontSize: '0.82rem', color: '#cbd5e1', marginTop: '0.2rem' }}>
                       {emp.email}

@@ -29,7 +29,6 @@ export async function POST(req: NextRequest) {
         name: employee.name,
         username: employee.username,
         role: employee.role,
-        department: employee.department,
         email: employee.email,
         phone: employee.phone,
         status: employee.status,

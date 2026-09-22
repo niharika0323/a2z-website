@@ -41,7 +41,6 @@ interface Employee {
   name: string;
   username: string;
   role: string;
-  department: string;
   email: string;
   phone: string;
   status: "PRESENT" | "ABSENT" | "ON_LEAVE" | "HALF_DAY" | "" | string;
@@ -100,7 +99,6 @@ export default function AdminDashboard() {
   // Filters & Search
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
-  const [deptFilter, setDeptFilter] = useState("ALL");
 
   // Modals
   const [showAddEmpModal, setShowAddEmpModal] = useState(false);
@@ -116,7 +114,6 @@ export default function AdminDashboard() {
     username: "",
     password: "",
     role: "",
-    department: "Security & Verification Ops",
     email: "",
     phone: "",
     status: ""
@@ -310,7 +307,6 @@ export default function AdminDashboard() {
           username: "",
           password: "",
           role: "",
-          department: "Security & Verification Ops",
           email: "",
           phone: "",
           status: ""
@@ -480,22 +476,13 @@ export default function AdminDashboard() {
         emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.department.toLowerCase().includes(searchTerm.toLowerCase());
+        emp.role.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesStatus = statusFilter === "ALL" || emp.status === statusFilter;
-      const matchesDept = deptFilter === "ALL" || emp.department === deptFilter;
 
-      return matchesSearch && matchesStatus && matchesDept;
+      return matchesSearch && matchesStatus;
     });
-  }, [employees, searchTerm, statusFilter, deptFilter]);
-
-  // Unique departments for filter dropdown
-  const departments = useMemo(() => {
-    const set = new Set<string>();
-    employees.forEach(e => { if (e.department) set.add(e.department); });
-    return Array.from(set);
-  }, [employees]);
+  }, [employees, searchTerm, statusFilter]);
 
   // Calendar math
   const calendarDays = useMemo(() => {
@@ -782,7 +769,7 @@ export default function AdminDashboard() {
                 <Search size={16} color="#38bdf8" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '0.9rem' }} />
                 <input
                   type="text"
-                  placeholder="Search by name, ID, username, role or department..."
+                  placeholder="Search by name, ID, username or role..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   style={{
@@ -814,21 +801,6 @@ export default function AdminDashboard() {
                   <option value="HALF_DAY">Half Day ({stats.halfDay || 0})</option>
                 </select>
               </div>
-
-              {/* Department Filter */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#94a3b8' }}>Dept:</span>
-                <select
-                  value={deptFilter}
-                  onChange={(e) => setDeptFilter(e.target.value)}
-                  style={{ padding: '0.55rem 0.9rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(7, 10, 16, 0.9)', color: '#ffffff', fontWeight: 600, fontSize: '0.88rem', outline: 'none' }}
-                >
-                  <option value="ALL">All Departments</option>
-                  {departments.map(d => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
-              </div>
             </div>
 
             {/* Employee Table */}
@@ -840,7 +812,6 @@ export default function AdminDashboard() {
                     <th style={{ padding: '0.8rem 0.75rem' }}>Staff Name</th>
                     <th style={{ padding: '0.8rem 0.75rem' }}>Username</th>
                     <th style={{ padding: '0.8rem 0.75rem' }}>Role</th>
-                    <th style={{ padding: '0.8rem 0.75rem' }}>Department</th>
                     <th style={{ padding: '0.8rem 0.75rem' }}>Live Status</th>
                     <th style={{ padding: '0.8rem 0.75rem' }}>Quick Status Toggle</th>
                     <th style={{ padding: '0.8rem 0.75rem', textAlign: 'right' }}>Action</th>
@@ -863,9 +834,6 @@ export default function AdminDashboard() {
                         </td>
                         <td style={{ padding: '0.8rem 0.75rem', color: '#ffffff', fontWeight: 600 }}>
                           {emp.role}
-                        </td>
-                        <td style={{ padding: '0.8rem 0.75rem', color: '#cbd5e1' }}>
-                          {emp.department}
                         </td>
                         <td style={{ padding: '0.8rem 0.75rem' }}>
                           {emp.status === "PRESENT" && (
@@ -1076,7 +1044,7 @@ export default function AdminDashboard() {
                     <div key={emp.id} style={{ background: 'rgba(16, 24, 40, 0.9)', padding: '0.85rem 1rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <div style={{ fontWeight: 700, fontSize: '1.02rem', color: '#ffffff' }}>{emp.name}</div>
-                        <div style={{ fontSize: '0.86rem', color: '#94a3b8', marginTop: '0.15rem' }}>{emp.id} • {emp.department}</div>
+                        <div style={{ fontSize: '0.86rem', color: '#94a3b8', marginTop: '0.15rem' }}>{emp.id} • {emp.role}</div>
                         <div style={{ fontSize: '0.84rem', color: '#f87171', marginTop: '0.25rem', fontWeight: 700 }}>
                           No Check-in
                         </div>
@@ -1113,7 +1081,7 @@ export default function AdminDashboard() {
                     <div key={emp.id} style={{ background: 'rgba(16, 24, 40, 0.9)', padding: '0.85rem 1rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <div style={{ fontWeight: 700, fontSize: '1.02rem', color: '#ffffff' }}>{emp.name}</div>
-                        <div style={{ fontSize: '0.86rem', color: '#94a3b8', marginTop: '0.15rem' }}>{emp.id} • {emp.department}</div>
+                        <div style={{ fontSize: '0.86rem', color: '#94a3b8', marginTop: '0.15rem' }}>{emp.id} • {emp.role}</div>
                         <div style={{ fontSize: '0.84rem', color: '#fbbf24', marginTop: '0.25rem', fontWeight: 700 }}>
                           Leave Granted
                         </div>
@@ -1750,7 +1718,6 @@ export default function AdminDashboard() {
                         <th style={{ padding: '0.85rem 1.1rem' }}>name</th>
                         <th style={{ padding: '0.85rem 1.1rem' }}>username</th>
                         <th style={{ padding: '0.85rem 1.1rem' }}>role</th>
-                        <th style={{ padding: '0.85rem 1.1rem' }}>department</th>
                         <th style={{ padding: '0.85rem 1.1rem' }}>status</th>
                         <th style={{ padding: '0.85rem 1.1rem' }}>check_in_time</th>
                       </tr>
@@ -1762,7 +1729,6 @@ export default function AdminDashboard() {
                           <td style={{ padding: '0.85rem 1.1rem', color: '#ffffff', fontWeight: 600 }}>{emp.name}</td>
                           <td style={{ padding: '0.85rem 1.1rem', color: '#94a3b8' }}>{emp.username}</td>
                           <td style={{ padding: '0.85rem 1.1rem', color: '#cbd5e1' }}>{emp.role}</td>
-                          <td style={{ padding: '0.85rem 1.1rem', color: '#94a3b8' }}>{emp.department}</td>
                           <td style={{ padding: '0.85rem 1.1rem' }}>
                             {emp.status ? (
                               <span style={{

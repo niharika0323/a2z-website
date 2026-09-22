@@ -25,8 +25,8 @@ export async function GET() {
       {
         name: "employees",
         count: employees.length,
-        description: "Stores corporate staff, admin accounts, roles, departments, contact info, and live daily attendance status.",
-        columns: ["id", "name", "username", "role", "department", "email", "phone", "status", "check_in_time", "check_out_time", "created_at"]
+        description: "Stores corporate staff, admin accounts, roles, contact info, and live daily attendance status.",
+        columns: ["id", "name", "username", "role", "email", "phone", "status", "check_in_time", "check_out_time", "created_at"]
       },
       {
         name: "verification_tasks",
