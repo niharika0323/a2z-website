@@ -193,27 +193,29 @@ export default function TechBackground() {
         }}
       />
 
-      {/* 2. Optional Working MP4 Video Fallback */}
+      {/* 2. High-Performance Lightweight HTML5 MP4/WebM Background Stream */}
       <video
         autoPlay
         loop
         muted
         playsInline
-        poster="/custom-hologram-developer.jpg"
+        preload="auto"
+        poster="/bit_bg_poster.jpg"
         style={{
           position: "absolute",
           inset: 0,
           width: "100%",
           height: "100%",
           objectFit: "cover",
-          objectPosition: "center 42%",
-          filter: "hue-rotate(200deg) saturate(1.35) contrast(1.15) brightness(1.0)",
-          opacity: 0.45, // Slightly increased video visibility
+          objectPosition: "center",
+          filter: "hue-rotate(60deg) saturate(1.4) contrast(1.2) brightness(1.1)",
+          opacity: 0.48,
           zIndex: 1,
           mixBlendMode: "screen"
         }}
       >
-        <source src="/pinterest-video.mp4" type="video/mp4" />
+        <source src="/bit_bg.webm" type="video/webm" />
+        <source src="/bit_bg.mp4" type="video/mp4" />
       </video>
 
       {/* 3. Real-Time High-DPI 60fps Animation Canvas (Oscillating Waves & Subtle Sparks) */}
