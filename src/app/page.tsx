@@ -1,8 +1,8 @@
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
-import Portfolio from "./components/Portfolio";
-import Services from "./components/Services";
 import About from "./components/About";
+import Services from "./components/Services";
+import Product from "./components/Product";
 import Contact from "./components/Contact";
 
 export default function Home() {
@@ -10,9 +10,9 @@ export default function Home() {
     <main style={{ scrollBehavior: 'smooth' }}>
       <Navbar />
       <Hero />
-      <Portfolio />
-      <Services />
       <About />
+      <Services />
+      <Product />
       <Contact />
     </main>
   );

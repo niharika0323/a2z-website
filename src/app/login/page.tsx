@@ -60,12 +60,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
       flexDirection: 'column',
-      alignItems: 'center', 
-      justifyContent: 'center', 
+      alignItems: 'center',
+      justifyContent: 'center',
       padding: '2rem',
       position: 'relative',
       zIndex: 10,
@@ -78,14 +78,14 @@ export default function LoginPage() {
       {/* Top Navigation / Home Link */}
       <div style={{ position: 'absolute', top: '2rem', left: '2rem' }}>
         <Link href="/" style={{ textDecoration: 'none' }}>
-          <motion.button 
+          <motion.button
             whileHover={{ x: -4, borderColor: '#00f5d4' }}
             whileTap={{ scale: 0.98 }}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.5rem', 
-              background: 'rgba(16, 24, 40, 0.85)', 
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: 'rgba(16, 24, 40, 0.85)',
               backdropFilter: 'blur(16px)',
               border: '1px solid rgba(56, 189, 248, 0.3)',
               padding: '0.6rem 1.2rem',
@@ -103,13 +103,13 @@ export default function LoginPage() {
       </div>
 
       {/* Transparent Dark Glassmorphism Login Card (Compact) */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        style={{ 
-          width: '100%', 
-          maxWidth: '380px', 
+        style={{
+          width: '100%',
+          maxWidth: '380px',
           padding: '2rem 1.8rem',
           background: 'rgba(16, 24, 40, 0.72)',
           backdropFilter: 'blur(24px)',
@@ -126,17 +126,17 @@ export default function LoginPage() {
             <Logo size="sm" showTagline={true} />
           </div>
 
-          <div style={{ 
-            display: 'inline-block', 
-            padding: '0.25rem 0.75rem', 
-            background: 'rgba(56, 189, 248, 0.12)', 
-            border: '1px solid rgba(56, 189, 248, 0.3)', 
-            borderRadius: '20px', 
-            color: '#38bdf8', 
-            fontSize: '0.68rem', 
-            fontWeight: 800, 
+          <div style={{
+            display: 'inline-block',
+            padding: '0.25rem 0.75rem',
+            background: 'rgba(56, 189, 248, 0.12)',
+            border: '1px solid rgba(56, 189, 248, 0.3)',
+            borderRadius: '20px',
+            color: '#38bdf8',
+            fontSize: '0.68rem',
+            fontWeight: 800,
             letterSpacing: '1px',
-            textTransform: 'uppercase', 
+            textTransform: 'uppercase',
             marginBottom: '0.6rem'
           }}>
             Authorized Personnel Portal
@@ -152,20 +152,20 @@ export default function LoginPage() {
 
         {/* Error Notification */}
         {error && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.5rem', 
-              background: 'rgba(239, 68, 68, 0.15)', 
-              border: '1px solid rgba(239, 68, 68, 0.4)', 
-              color: '#f87171', 
-              padding: '0.65rem 0.85rem', 
-              borderRadius: '8px', 
-              fontSize: '0.8rem', 
-              marginBottom: '1.1rem' 
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: 'rgba(239, 68, 68, 0.15)',
+              border: '1px solid rgba(239, 68, 68, 0.4)',
+              color: '#f87171',
+              padding: '0.65rem 0.85rem',
+              borderRadius: '8px',
+              fontSize: '0.8rem',
+              marginBottom: '1.1rem'
             }}
           >
             <AlertCircle size={16} style={{ flexShrink: 0 }} />
@@ -181,23 +181,23 @@ export default function LoginPage() {
             </label>
             <div style={{ position: 'relative' }}>
               <User size={16} color="#00f5d4" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '0.85rem' }} />
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={username}
                 placeholder="Enter your username"
                 onChange={(e) => setUsername(e.target.value)}
-                style={{ 
-                  width: '100%', 
-                  padding: '0.7rem 0.85rem 0.7rem 2.4rem', 
-                  borderRadius: '10px', 
-                  border: '1px solid rgba(56, 189, 248, 0.25)', 
-                  background: 'rgba(7, 10, 16, 0.65)', 
-                  color: '#ffffff', 
+                style={{
+                  width: '100%',
+                  padding: '0.7rem 0.85rem 0.7rem 2.4rem',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(56, 189, 248, 0.25)',
+                  background: 'rgba(7, 10, 16, 0.65)',
+                  color: '#ffffff',
                   fontSize: '0.86rem',
                   outline: 'none',
                   boxSizing: 'border-box',
                   transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
-                }} 
+                }}
                 onFocus={(e) => {
                   e.currentTarget.style.borderColor = '#00f5d4';
                   e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 245, 212, 0.25)';
@@ -216,23 +216,23 @@ export default function LoginPage() {
             </label>
             <div style={{ position: 'relative' }}>
               <KeyRound size={16} color="#00f5d4" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '0.85rem' }} />
-              <input 
-                type="password" 
+              <input
+                type="password"
                 value={password}
                 placeholder="••••••••"
                 onChange={(e) => setPassword(e.target.value)}
-                style={{ 
-                  width: '100%', 
-                  padding: '0.7rem 0.85rem 0.7rem 2.4rem', 
-                  borderRadius: '10px', 
-                  border: '1px solid rgba(56, 189, 248, 0.25)', 
-                  background: 'rgba(7, 10, 16, 0.65)', 
-                  color: '#ffffff', 
+                style={{
+                  width: '100%',
+                  padding: '0.7rem 0.85rem 0.7rem 2.4rem',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(56, 189, 248, 0.25)',
+                  background: 'rgba(7, 10, 16, 0.65)',
+                  color: '#ffffff',
                   fontSize: '0.86rem',
                   outline: 'none',
                   boxSizing: 'border-box',
                   transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
-                }} 
+                }}
                 onFocus={(e) => {
                   e.currentTarget.style.borderColor = '#00f5d4';
                   e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 245, 212, 0.25)';
@@ -245,15 +245,15 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <motion.button 
-            type="submit" 
+          <motion.button
+            type="submit"
             disabled={loading}
             whileHover={{ scale: 1.02, boxShadow: '0 6px 25px rgba(0, 245, 212, 0.45)' }}
             whileTap={{ scale: 0.98 }}
-            style={{ 
-              width: '100%', 
-              padding: '0.75rem 1rem', 
-              marginTop: '0.5rem', 
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem',
+              marginTop: '0.5rem',
               fontSize: '0.88rem',
               fontWeight: 800,
               display: 'flex',
@@ -277,6 +277,8 @@ export default function LoginPage() {
             )}
           </motion.button>
         </form>
+
+
       </motion.div>
     </div>
   );

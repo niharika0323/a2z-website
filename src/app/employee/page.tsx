@@ -17,7 +17,13 @@ import {
   ArrowRight,
   Plus,
   Trash2,
-  X
+  X,
+  Search,
+  Activity,
+  Award,
+  Zap,
+  CheckCircle,
+  Briefcase
 } from "lucide-react";
 import Link from "next/link";
 import Logo from "@/app/components/Logo";
@@ -55,10 +61,10 @@ export interface VerificationTask {
 }
 
 const DEFAULT_TASKS: VerificationTask[] = [
-  { id: "TSK-101", task: "Next.js Frontend Architecture & UI Sprint", priority: "High", time: "SLA: 4h", status: "In Progress" },
-  { id: "TSK-102", task: "REST API Gateway & Payment SDK Integration", priority: "Urgent", time: "SLA: 2h", status: "Review" },
-  { id: "TSK-103", task: "Mobile App Push Notifications & Offline Sync", priority: "Normal", time: "SLA: 24h", status: "Verified" },
-  { id: "TSK-104", task: "Cloud Database Migration & Query Indexing", priority: "Normal", time: "SLA: 12h", status: "In Progress" }
+  { id: "TSK-101", task: "Next.js 16 Server Component Optimization", priority: "High", time: "SLA: 4h", status: "In Progress" },
+  { id: "TSK-102", task: "Enterprise REST API Gateway & OAuth Security", priority: "Urgent", time: "SLA: 2h", status: "Review" },
+  { id: "TSK-103", task: "Mobile Push Notification Engine & Offline Sync", priority: "Normal", time: "SLA: 24h", status: "Verified" },
+  { id: "TSK-104", task: "Cloud Database Query Indexing & Backup Verification", priority: "Normal", time: "SLA: 12h", status: "In Progress" }
 ];
 
 export default function EmployeePortal() {
@@ -68,10 +74,13 @@ export default function EmployeePortal() {
   const [events, setEvents] = useState<CompanyEvent[]>([]);
   const [activeTab, setActiveTab] = useState<"OVERVIEW" | "ATTENDANCE" | "CALENDAR" | "DIRECTORY">("OVERVIEW");
   const [notification, setNotification] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState<string>("");
 
   // Employee Task Management State
   const [tasks, setTasks] = useState<VerificationTask[]>(DEFAULT_TASKS);
+  const [taskFilter, setTaskFilter] = useState<string>("ALL");
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [directorySearch, setDirectorySearch] = useState("");
   const [newTask, setNewTask] = useState<{
     task: string;
     priority: "Urgent" | "High" | "Normal";
@@ -83,6 +92,16 @@ export default function EmployeePortal() {
     time: "SLA: 4h",
     status: "In Progress"
   });
+
+  // Live Digital Clock
+  useEffect(() => {
+    const updateTime = () => {
+      setCurrentTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const stored = localStorage.getItem("a2z_user");
@@ -99,18 +118,14 @@ export default function EmployeePortal() {
       router.push("/login");
     }
 
-    // Load saved tasks from localStorage and filter out legacy BGV tasks
     const savedTasks = localStorage.getItem("a2z_employee_tasks");
     if (savedTasks) {
       try {
         const parsed = JSON.parse(savedTasks);
-        const clean = parsed.filter((t: any) => !t.id?.startsWith("BGV-"));
-        if (clean.length > 0) {
-          setTasks(clean);
-        } else {
-          localStorage.removeItem("a2z_employee_tasks");
+        if (parsed.length > 0) {
+          setTasks(parsed);
         }
-      } catch (e) { }
+      } catch (e) {}
     }
 
     fetchTasks();
@@ -127,75 +142,79 @@ export default function EmployeePortal() {
         localStorage.setItem("a2z_employee_tasks", JSON.stringify(data.tasks));
       }
     } catch (e) {
-      console.warn("Could not sync tasks from API, using cached", e);
+      console.warn("Could not load server tasks, using local cache", e);
     }
   };
 
-  const saveTasks = (newTasks: VerificationTask[]) => {
-    setTasks(newTasks);
-    localStorage.setItem("a2z_employee_tasks", JSON.stringify(newTasks));
-  };
-
-  const handleAddTask = async (e: React.FormEvent) => {
+  const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTask.task.trim()) return;
-    const id = `TSK-${Math.floor(100 + Math.random() * 900)}`;
-    const created: VerificationTask = {
-      id,
-      title: newTask.task.trim(),
+
+    const taskObj: VerificationTask = {
+      id: `TSK-${Math.floor(100 + Math.random() * 900)}`,
+      task: newTask.task,
+      title: newTask.task,
+      assigned_to: currentUser?.id || "EMP-101",
+      employee_name: currentUser?.name || "Staff Member",
       priority: newTask.priority,
-      time: newTask.time.trim() || "SLA: 4h",
-      status: newTask.status,
-      assigned_to: currentUser?.id || 'EMP-101',
-      employee_name: currentUser?.name || 'Staff Member'
+      time: newTask.time || "SLA: 4h",
+      status: newTask.status
     };
 
-    // Update local state first
-    const updated = [created, ...tasks];
-    saveTasks(updated);
-    setNewTask({ task: "", priority: "High", time: "SLA: 4h", status: "In Progress" });
-    setShowAddTaskModal(false);
-    showToast(`Task ${id} added successfully!`);
-
-    // Sync to backend DB
     try {
-      await fetch("/api/tasks", {
+      const res = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(created)
+        body: JSON.stringify(taskObj)
       });
+      if (res.ok) {
+        const data = await res.json();
+        const updated = [data.task || taskObj, ...tasks];
+        setTasks(updated);
+        localStorage.setItem("a2z_employee_tasks", JSON.stringify(updated));
+      } else {
+        const updated = [taskObj, ...tasks];
+        setTasks(updated);
+        localStorage.setItem("a2z_employee_tasks", JSON.stringify(updated));
+      }
     } catch (err) {
-      console.warn("Offline or failed to sync task", err);
+      const updated = [taskObj, ...tasks];
+      setTasks(updated);
+      localStorage.setItem("a2z_employee_tasks", JSON.stringify(updated));
     }
+
+    setShowAddTaskModal(false);
+    setNewTask({ task: "", priority: "High", time: "SLA: 4h", status: "In Progress" });
+    showToast("Task successfully added to your work queue!");
   };
 
-  const handleUpdateTaskStatus = async (taskId: string, status: VerificationTask["status"]) => {
-    const updated = tasks.map(t => t.id === taskId ? { ...t, status } : t);
-    saveTasks(updated);
-    showToast(`Task status updated to "${status}"`);
+  const handleUpdateTaskStatus = async (id: string, newStatus: VerificationTask["status"]) => {
+    const updated = tasks.map(t => (t.id === id ? { ...t, status: newStatus } : t));
+    setTasks(updated);
+    localStorage.setItem("a2z_employee_tasks", JSON.stringify(updated));
 
-    // Sync to backend DB
     try {
       await fetch("/api/tasks", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: taskId, status })
+        body: JSON.stringify({ id, status: newStatus })
       });
-    } catch (err) {
-      console.warn("Failed to sync task status", err);
+      showToast(`Task ${id} updated to ${newStatus}`);
+    } catch (e) {
+      showToast(`Task ${id} updated locally`);
     }
   };
 
-  const handleDeleteTask = async (taskId: string) => {
-    const updated = tasks.filter(t => t.id !== taskId);
-    saveTasks(updated);
-    showToast("Task removed from queue");
+  const handleDeleteTask = async (id: string) => {
+    const updated = tasks.filter(t => t.id !== id);
+    setTasks(updated);
+    localStorage.setItem("a2z_employee_tasks", JSON.stringify(updated));
 
-    // Sync to backend DB
     try {
-      await fetch(`/api/tasks?id=${taskId}`, { method: "DELETE" });
-    } catch (err) {
-      console.warn("Failed to delete task from DB", err);
+      await fetch(`/api/tasks?id=${id}`, { method: "DELETE" });
+      showToast("Task removed from active board.");
+    } catch (e) {
+      showToast("Task removed.");
     }
   };
 
@@ -279,8 +298,8 @@ export default function EmployeePortal() {
         localStorage.setItem("a2z_user", JSON.stringify(updated));
         showToast(
           action === "PUNCH_IN" ? `Punched In recorded at ${nowTime}!` :
-            action === "PUNCH_OUT" ? `Punched Out recorded at ${nowTime}!` :
-              action === "HALF_DAY" ? `Half Day logged at ${nowTime}!` : `On Leave recorded for today!`
+          action === "PUNCH_OUT" ? `Punched Out recorded at ${nowTime}!` :
+          action === "HALF_DAY" ? `Half Day logged at ${nowTime}!` : `On Leave recorded for today!`
         );
       }
     } catch (err) {
@@ -290,68 +309,106 @@ export default function EmployeePortal() {
 
   if (!currentUser) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#94a3b8', fontSize: '0.8rem' }}>Authenticating credentials...</p>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#06080e' }}>
+        <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Authenticating employee credentials...</p>
       </div>
     );
   }
 
+  const filteredTasks = tasks.filter(t => {
+    if (taskFilter === "ALL") return true;
+    return t.status === taskFilter;
+  });
+
+  const filteredDirectory = directory.filter(e => 
+    e.name.toLowerCase().includes(directorySearch.toLowerCase()) ||
+    e.department.toLowerCase().includes(directorySearch.toLowerCase()) ||
+    e.role.toLowerCase().includes(directorySearch.toLowerCase())
+  );
+
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: '3rem', position: 'relative', zIndex: 10, backgroundColor: '#070a10', color: '#ffffff' }}>
-      {/* Compact Navbar */}
+    <div style={{ minHeight: '100vh', paddingBottom: '4rem', position: 'relative', zIndex: 10, backgroundColor: '#06080e', color: '#ffffff' }}>
+      
+      {/* Executive Enterprise Top Navigation Bar */}
       <nav style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '0.65rem 1.5rem',
-        background: 'rgba(16, 24, 40, 0.55)',
+        padding: '0.75rem 2rem',
+        background: 'rgba(12, 16, 23, 0.85)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
-        borderBottom: '1px solid rgba(56, 189, 248, 0.2)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
         position: 'sticky',
         top: 0,
         zIndex: 50
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
           <Link href="/" style={{ textDecoration: 'none' }}>
             <Logo size="sm" showTagline={false} />
           </Link>
           <span style={{
-            background: 'linear-gradient(135deg, #00f5d4, #38bdf8)',
-            color: '#070a10',
+            background: 'rgba(56, 189, 248, 0.12)',
+            border: '1px solid rgba(56, 189, 248, 0.3)',
+            color: '#38bdf8',
             padding: '0.25rem 0.8rem',
             borderRadius: '20px',
-            fontSize: '0.75rem',
+            fontSize: '0.72rem',
             fontWeight: 800,
             letterSpacing: '1px',
             textTransform: 'uppercase'
           }}>
-            Employee Portal
+            Staff Workspace
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {/* Live Digital Clock Badge */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.4rem', 
+            fontSize: '0.78rem', 
+            fontWeight: 700, 
+            color: '#00f5d4',
+            background: 'rgba(0, 245, 212, 0.08)',
+            border: '1px solid rgba(0, 245, 212, 0.25)',
+            padding: '0.3rem 0.75rem',
+            borderRadius: '20px'
+          }}>
+            <Clock size={13} color="#00f5d4" />
+            <span>{currentTime || "Live"}</span>
+          </div>
+
           {currentUser.role === "ADMIN" && (
             <Link href="/admin" style={{ textDecoration: 'none' }}>
               <button style={{
-                background: 'linear-gradient(135deg, #38bdf8, #9b72cf)',
+                background: 'linear-gradient(135deg, #0284c7, #818cf8)',
                 color: '#fff',
                 border: 'none',
-                padding: '0.25rem 0.65rem',
-                borderRadius: '5px',
+                padding: '0.35rem 0.85rem',
+                borderRadius: '8px',
                 fontWeight: 700,
-                fontSize: '0.7rem',
-                cursor: 'pointer'
+                fontSize: '0.74rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem'
               }}>
-                ⚡ Admin View
+                <ShieldCheck size={13} /> Admin Console
               </button>
             </Link>
           )}
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', color: '#ffffff', fontWeight: 600 }}>
-            <User size={13} color="#38bdf8" />
-            <span>{currentUser.name}</span>
-            <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>({currentUser.id})</span>
+          {/* User Profile Pill */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.82rem', color: '#ffffff', fontWeight: 600 }}>
+            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg, #00f5d4, #0284c7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#06080e', fontWeight: 800, fontSize: '0.75rem' }}>
+              {currentUser.name.charAt(0)}
+            </div>
+            <div>
+              <span style={{ fontWeight: 700 }}>{currentUser.name}</span>
+              <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', lineHeight: 1 }}>{currentUser.id}</span>
+            </div>
           </div>
 
           <button
@@ -361,14 +418,13 @@ export default function EmployeePortal() {
               alignItems: 'center',
               gap: '0.35rem',
               background: 'rgba(239, 68, 68, 0.12)',
-              border: '1px solid rgba(239, 68, 68, 0.35)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
               color: '#f87171',
-              padding: '0.35rem 0.75rem',
+              padding: '0.4rem 0.8rem',
               borderRadius: '8px',
               cursor: 'pointer',
               fontSize: '0.76rem',
               fontWeight: 700,
-              boxShadow: '0 2px 10px rgba(239, 68, 68, 0.15)',
               transition: 'all 0.2s ease'
             }}
           >
@@ -377,7 +433,7 @@ export default function EmployeePortal() {
         </div>
       </nav>
 
-      {/* Toast Notification */}
+      {/* Floating Toast Notification */}
       <AnimatePresence>
         {notification && (
           <motion.div
@@ -386,68 +442,91 @@ export default function EmployeePortal() {
             exit={{ opacity: 0, y: -10 }}
             style={{
               position: 'fixed',
-              top: '3.5rem',
-              right: '1.5rem',
+              top: '4rem',
+              right: '2rem',
               zIndex: 999,
-              padding: '0.45rem 0.9rem',
-              borderRadius: '6px',
+              padding: '0.6rem 1.2rem',
+              borderRadius: '10px',
               fontWeight: 700,
-              fontSize: '0.74rem',
-              background: '#d4edda',
-              color: '#155724',
-              border: '1px solid #c3e6cb',
-              boxShadow: '0 4px 15px rgba(0,0,0,0.08)'
+              fontSize: '0.8rem',
+              background: 'rgba(12, 16, 23, 0.95)',
+              color: '#00f5d4',
+              border: '1px solid #00f5d4',
+              boxShadow: '0 8px 25px rgba(0, 245, 212, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
             }}
           >
+            <CheckCircle size={15} color="#00f5d4" />
             {notification}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Small Compact Container */}
-      <div style={{ maxWidth: '840px', margin: '1.2rem auto 0 auto', padding: '0 1rem' }}>
+      {/* Main Content Area */}
+      <div style={{ maxWidth: '1120px', margin: '1.8rem auto 0 auto', padding: '0 1.5rem' }}>
 
-        {/* Modern Welcome Card */}
-        <div className="glass-card" style={{ padding: '1.2rem 1.4rem', marginBottom: '1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', borderRadius: '16px', border: '1px solid rgba(56, 189, 248, 0.22)', boxShadow: '0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem' }}>
+        {/* Executive Header Banner */}
+        <div className="glass-card" style={{ 
+          padding: '1.8rem 2rem', 
+          marginBottom: '1.5rem', 
+          background: 'rgba(12, 16, 23, 0.8)', 
+          border: '1px solid rgba(56, 189, 248, 0.25)', 
+          borderRadius: '18px' 
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
-              <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-                Employee Portal • A2Z Software Solutions
+              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '1.2px', marginBottom: '0.3rem' }}>
+                Enterprise Digital Workforce &bull; A2Z
               </div>
-              <h2 style={{ fontSize: '1.22rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', margin: '0.2rem 0' }}>
-                Welcome, {currentUser.name}
+              <h2 style={{ fontSize: '1.65rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
+                Welcome back, {currentUser.name}
               </h2>
-              <div style={{ display: 'flex', gap: '0.8rem', color: '#94a3b8', fontSize: '0.74rem', flexWrap: 'wrap' }}>
-                <span><strong>ID:</strong> <span style={{ color: '#00f5d4', fontWeight: 700 }}>{currentUser.id}</span></span>
-                <span><strong>Role:</strong> {currentUser.role}</span>
-                <span><strong>Dept:</strong> {currentUser.department}</span>
+              <div style={{ display: 'flex', gap: '1.2rem', color: '#94a3b8', fontSize: '0.82rem', marginTop: '0.4rem', flexWrap: 'wrap' }}>
+                <span><strong>Role:</strong> <span style={{ color: '#cbd5e1' }}>{currentUser.role}</span></span>
+                <span><strong>Department:</strong> <span style={{ color: '#cbd5e1' }}>{currentUser.department}</span></span>
+                <span><strong>Email:</strong> <span style={{ color: '#cbd5e1' }}>{currentUser.email}</span></span>
               </div>
             </div>
 
-            {/* Small Status Badge */}
+            {/* Current Attendance Status Badge */}
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginBottom: '0.25rem', fontWeight: 700 }}>
-                Today's Punch Status
+              <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginBottom: '0.4rem', fontWeight: 700 }}>
+                Current Shift Status
               </div>
               <div>
                 {currentUser.status === "PRESENT" && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: '#dcfce7', color: '#15803d', border: '1px solid #86efac', padding: '0.25rem 0.75rem', borderRadius: '16px', fontWeight: 800, fontSize: '0.74rem', boxShadow: '0 2px 6px rgba(22, 163, 74, 0.15)' }}>
-                    <CheckCircle2 size={13} /> PRESENT {currentUser.check_in_time ? `(${currentUser.check_in_time})` : ''}
+                  <span style={{ 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '0.45rem', 
+                    background: 'rgba(16, 185, 129, 0.15)', 
+                    color: '#34d399', 
+                    border: '1px solid rgba(16, 185, 129, 0.35)', 
+                    padding: '0.35rem 0.95rem', 
+                    borderRadius: '20px', 
+                    fontWeight: 800, 
+                    fontSize: '0.8rem',
+                    boxShadow: '0 0 15px rgba(16, 185, 129, 0.2)'
+                  }}>
+                    <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} />
+                    PRESENT {currentUser.check_in_time ? `• In at ${currentUser.check_in_time}` : ''}
                   </span>
                 )}
                 {currentUser.status === "HALF_DAY" && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: '#fef3c7', color: '#b45309', border: '1px solid #fcd34d', padding: '0.25rem 0.75rem', borderRadius: '16px', fontWeight: 800, fontSize: '0.74rem' }}>
-                    <Clock3 size={13} /> HALF DAY {currentUser.check_in_time ? `(${currentUser.check_in_time})` : ''}
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.35)', padding: '0.35rem 0.95rem', borderRadius: '20px', fontWeight: 800, fontSize: '0.8rem' }}>
+                    <Clock3 size={14} /> HALF DAY {currentUser.check_in_time ? `• ${currentUser.check_in_time}` : ''}
                   </span>
                 )}
                 {currentUser.status === "ABSENT" && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', padding: '0.25rem 0.75rem', borderRadius: '16px', fontWeight: 800, fontSize: '0.74rem' }}>
-                    <XCircle size={13} /> ABSENT
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.35)', padding: '0.35rem 0.95rem', borderRadius: '20px', fontWeight: 800, fontSize: '0.8rem' }}>
+                    <XCircle size={14} /> ABSENT
                   </span>
                 )}
                 {currentUser.status === "ON_LEAVE" && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: '#fce7f3', color: '#be185d', border: '1px solid #fbcfe8', padding: '0.25rem 0.75rem', borderRadius: '16px', fontWeight: 800, fontSize: '0.74rem' }}>
-                    <Clock3 size={13} /> ON LEAVE
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', background: 'rgba(236, 72, 153, 0.15)', color: '#f472b6', border: '1px solid rgba(236, 72, 153, 0.35)', padding: '0.35rem 0.95rem', borderRadius: '20px', fontWeight: 800, fontSize: '0.8rem' }}>
+                    <Calendar size={14} /> ON LEAVE
                   </span>
                 )}
               </div>
@@ -455,28 +534,89 @@ export default function EmployeePortal() {
           </div>
         </div>
 
-        {/* Small Navigation Tabs */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.1rem', flexWrap: 'wrap', borderBottom: '1px solid rgba(0,0,0,0.06)', paddingBottom: '0.4rem' }}>
+        {/* 4 Executive KPI Metric Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.2rem', marginBottom: '1.8rem' }}>
+          
+          {/* Card 1: Active Tasks */}
+          <div className="glass-card" style={{ padding: '1.3rem 1.5rem', background: 'rgba(16, 24, 40, 0.75)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.86rem', color: '#94a3b8', fontWeight: 700 }}>ACTIVE TASKS</span>
+              <Activity size={18} color="#38bdf8" />
+            </div>
+            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#38bdf8', marginTop: '0.3rem' }}>
+              {tasks.filter(t => t.status !== "Verified").length}
+            </div>
+            <div style={{ fontSize: '0.82rem', color: '#cbd5e1', marginTop: '0.25rem' }}>
+              {tasks.filter(t => t.priority === "Urgent").length} urgent priority
+            </div>
+          </div>
+
+          {/* Card 2: Completed Tasks (Replaces SLA Compliance) */}
+          <div className="glass-card" style={{ padding: '1.3rem 1.5rem', background: 'rgba(16, 24, 40, 0.75)', border: '1px solid rgba(0, 245, 212, 0.3)', borderRadius: '14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.86rem', color: '#94a3b8', fontWeight: 700 }}>COMPLETED TASKS</span>
+              <CheckCircle2 size={18} color="#00f5d4" />
+            </div>
+            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#00f5d4', marginTop: '0.3rem' }}>
+              {tasks.filter(t => t.status === "Verified").length}
+            </div>
+            <div style={{ fontSize: '0.82rem', color: '#cbd5e1', marginTop: '0.25rem' }}>
+              Delivered & verified
+            </div>
+          </div>
+
+          {/* Card 3: Attendance Rate */}
+          <div className="glass-card" style={{ padding: '1.3rem 1.5rem', background: 'rgba(16, 24, 40, 0.75)', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.86rem', color: '#94a3b8', fontWeight: 700 }}>ATTENDANCE RATE</span>
+              <Award size={18} color="#a855f7" />
+            </div>
+            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#a855f7', marginTop: '0.3rem' }}>
+              100%
+            </div>
+            <div style={{ fontSize: '0.82rem', color: '#cbd5e1', marginTop: '0.25rem' }}>
+              Current month on-time record
+            </div>
+          </div>
+
+          {/* Card 4: Paid Leave Balance (Replaces System Status) */}
+          <div className="glass-card" style={{ padding: '1.3rem 1.5rem', background: 'rgba(16, 24, 40, 0.75)', border: '1px solid rgba(52, 211, 153, 0.3)', borderRadius: '14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.86rem', color: '#94a3b8', fontWeight: 700 }}>PAID LEAVE BALANCE</span>
+              <Calendar size={18} color="#34d399" />
+            </div>
+            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#34d399', marginTop: '0.3rem' }}>
+              18 Days
+            </div>
+            <div style={{ fontSize: '0.82rem', color: '#cbd5e1', marginTop: '0.25rem' }}>
+              4 Casual • 14 Annual Earned
+            </div>
+          </div>
+
+        </div>
+
+        {/* Modern Tab Switcher */}
+        <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '1.6rem', flexWrap: 'wrap' }}>
           {[
-            { id: "OVERVIEW", label: "Operations & Tasks" },
-            { id: "ATTENDANCE", label: "Attendance Punch" },
-            { id: "CALENDAR", label: "Calendar & Holidays" },
-            { id: "DIRECTORY", label: "Staff Directory" }
+            { id: "OVERVIEW", label: "Task Board & Queue" },
+            { id: "ATTENDANCE", label: "Attendance Clock" },
+            { id: "CALENDAR", label: "Company Calendar" },
+            { id: "DIRECTORY", label: "Colleague Directory" }
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               style={{
-                padding: '0.4rem 0.85rem',
-                borderRadius: '8px',
+                padding: '0.65rem 1.25rem',
+                borderRadius: '10px',
                 fontWeight: 700,
-                fontSize: '0.74rem',
+                fontSize: '0.94rem',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                background: activeTab === tab.id ? 'linear-gradient(135deg, #00f5d4 0%, #0284c7 100%)' : 'rgba(16, 24, 40, 0.65)',
-                color: activeTab === tab.id ? '#070a10' : '#cbd5e1',
-                border: activeTab === tab.id ? 'none' : '1px solid rgba(56, 189, 248, 0.25)',
-                boxShadow: activeTab === tab.id ? '0 4px 15px rgba(0, 245, 212, 0.3)' : 'none'
+                transition: 'all 0.25s ease',
+                background: activeTab === tab.id ? 'linear-gradient(135deg, #00f5d4 0%, #0284c7 100%)' : 'rgba(16, 24, 40, 0.75)',
+                color: activeTab === tab.id ? '#06080e' : '#cbd5e1',
+                border: activeTab === tab.id ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: activeTab === tab.id ? '0 4px 20px rgba(0, 245, 212, 0.35)' : 'none'
               }}
             >
               {tab.label}
@@ -484,328 +624,378 @@ export default function EmployeePortal() {
           ))}
         </div>
 
-        {/* TAB 1: OVERVIEW & TASKS QUEUE */}
+        {/* TAB 1: OVERVIEW & TASKS BOARD */}
         {activeTab === "OVERVIEW" && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
+          <div>
+            {/* Header controls for tasks */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '1rem' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                {["ALL", "In Progress", "Review", "Verified", "Blocked"].map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setTaskFilter(f)}
+                    style={{
+                      padding: '0.4rem 0.9rem',
+                      borderRadius: '20px',
+                      fontSize: '0.84rem',
+                      fontWeight: 700,
+                      background: taskFilter === f ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                      color: taskFilter === f ? '#38bdf8' : '#94a3b8',
+                      border: taskFilter === f ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.1)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
 
-            {/* Assigned Tasks Queue Card */}
-            <div className="glass-card" style={{ padding: '1.2rem 1.3rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderRadius: '16px', border: '1px solid rgba(56, 189, 248, 0.25)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <ShieldCheck color="#0284c7" size={18} />
-                  <h3 style={{ fontSize: '0.96rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
-                    Assigned Tasks Queue ({tasks.length})
-                  </h3>
-                </div>
-                <button
-                  onClick={() => setShowAddTaskModal(true)}
-                  style={{
-                    display: 'inline-flex',
+              <button
+                onClick={() => setShowAddTaskModal(true)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #00f5d4 0%, #0284c7 100%)',
+                  color: '#06080e',
+                  fontWeight: 800,
+                  border: 'none',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 15px rgba(0, 245, 212, 0.3)'
+                }}
+              >
+                <Plus size={15} /> Add New Task
+              </button>
+            </div>
+
+            {/* Task Cards Grid */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {filteredTasks.map((item) => (
+                <div 
+                  key={item.id} 
+                  className="glass-card"
+                  style={{ 
+                    padding: '1.1rem 1.4rem', 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
                     alignItems: 'center',
-                    gap: '0.35rem',
-                    padding: '0.35rem 0.75rem',
-                    borderRadius: '8px',
-                    background: 'linear-gradient(135deg, #00f5d4 0%, #0284c7 100%)',
-                    color: '#070a10', fontWeight: 800,
-                    border: 'none',
-                    fontSize: '0.72rem',
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)'
+                    flexWrap: 'wrap',
+                    gap: '1rem',
+                    borderLeft: `4px solid ${
+                      item.priority === 'Urgent' ? '#ef4444' : 
+                      item.priority === 'High' ? '#f59e0b' : '#38bdf8'
+                    }`
                   }}
                 >
-                  <Plus size={13} /> Add Task
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
-                {tasks.map((item) => (
-                  <div key={item.id} style={{ padding: '0.75rem 0.9rem', background: 'rgba(7, 10, 16, 0.65)', borderRadius: '10px', border: '1px solid rgba(56, 189, 248, 0.2)', borderLeft: '4px solid #00f5d4', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ flex: '1 1 auto', minWidth: 0, marginRight: '0.5rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                        <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#00f5d4', background: 'rgba(0, 245, 212, 0.12)', padding: '0.12rem 0.45rem', borderRadius: '4px' }}>{item.id}</span>
-                        <span style={{ fontWeight: 700, fontSize: '0.78rem', color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title || item.task}</span>
-                      </div>
-                      <div style={{ fontSize: '0.66rem', color: '#94a3b8', marginTop: '0.2rem', fontWeight: 600 }}>
-                        {item.time} • Priority: <strong style={{ color: item.priority === 'Urgent' ? '#b91c1c' : item.priority === 'High' ? '#b45309' : '#475569' }}>{item.priority}</strong>
-                      </div>
+                  <div style={{ flex: '1 1 320px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.3rem' }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#00f5d4', background: 'rgba(0, 245, 212, 0.12)', padding: '0.15rem 0.55rem', borderRadius: '6px' }}>
+                        {item.id}
+                      </span>
+                      <span style={{ fontWeight: 700, fontSize: '0.92rem', color: '#ffffff' }}>
+                        {item.title || item.task}
+                      </span>
                     </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexShrink: 0 }}>
-                      {/* Interactive Status Selector */}
-                      <select
-                        value={item.status}
-                        onChange={(e) => handleUpdateTaskStatus(item.id, e.target.value as any)}
-                        style={{
-                          fontSize: '0.68rem',
-                          fontWeight: 700,
-                          padding: '0.25rem 0.5rem',
-                          borderRadius: '6px',
-                          border: '1px solid rgba(56, 189, 248, 0.25)',
-                          cursor: 'pointer',
-                          outline: 'none',
-                          background:
-                            item.status === "Verified" ? 'rgba(0, 245, 212, 0.15)' :
-                              item.status === "Review" ? 'rgba(168, 85, 247, 0.15)' :
-                                item.status === "Blocked" ? 'rgba(239, 68, 68, 0.15)' : 'rgba(56, 189, 248, 0.15)',
-                          color:
-                            item.status === "Verified" ? '#00f5d4' :
-                              item.status === "Review" ? '#c084fc' :
-                                item.status === "Blocked" ? '#f87171' : '#38bdf8'
-                        }}
-                      >
-                        <option value="In Progress">In Progress</option>
-                        <option value="Review">Under Review</option>
-                        <option value="Verified">Completed</option>
-                        <option value="Blocked">Blocked</option>
-                      </select>
-
-                      {/* Delete Task */}
-                      <button
-                        onClick={() => handleDeleteTask(item.id)}
-                        title="Remove Task"
-                        style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#dc2626', cursor: 'pointer', padding: '0.25rem', borderRadius: '4px' }}
-                      >
-                        <Trash2 size={12} />
-                      </button>
+                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                      <span>{item.time}</span>
+                      <span>Priority: <strong style={{ color: item.priority === 'Urgent' ? '#f87171' : item.priority === 'High' ? '#fbbf24' : '#94a3b8' }}>{item.priority}</strong></span>
                     </div>
                   </div>
-                ))}
 
-                {tasks.length === 0 && (
-                  <div style={{ textAlign: 'center', padding: '1.5rem', color: '#94a3b8', fontSize: '0.78rem' }}>
-                    No tasks currently assigned. Click <strong>+ Add Task</strong> above to add one!
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                    <select
+                      value={item.status}
+                      onChange={(e) => handleUpdateTaskStatus(item.id, e.target.value as any)}
+                      style={{
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        padding: '0.35rem 0.75rem',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        cursor: 'pointer',
+                        outline: 'none',
+                        background:
+                          item.status === "Verified" ? 'rgba(0, 245, 212, 0.15)' :
+                          item.status === "Review" ? 'rgba(168, 85, 247, 0.15)' :
+                          item.status === "Blocked" ? 'rgba(239, 68, 68, 0.15)' : 'rgba(56, 189, 248, 0.15)',
+                        color:
+                          item.status === "Verified" ? '#00f5d4' :
+                          item.status === "Review" ? '#c084fc' :
+                          item.status === "Blocked" ? '#f87171' : '#38bdf8'
+                      }}
+                    >
+                      <option value="In Progress">In Progress</option>
+                      <option value="Review">Review</option>
+                      <option value="Verified">Completed</option>
+                      <option value="Blocked">Blocked</option>
+                    </select>
+
+                    <button
+                      onClick={() => handleDeleteTask(item.id)}
+                      title="Delete task"
+                      style={{ 
+                        background: 'rgba(239, 68, 68, 0.1)', 
+                        border: '1px solid rgba(239, 68, 68, 0.25)', 
+                        color: '#f87171', 
+                        cursor: 'pointer', 
+                        padding: '0.4rem', 
+                        borderRadius: '6px' 
+                      }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Quick Actions Card */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-              <div className="glass-card" style={{ padding: '1.2rem 1.3rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderRadius: '16px', border: '1px solid rgba(56, 189, 248, 0.25)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
-                <h3 style={{ fontSize: '0.96rem', fontWeight: 800, color: '#ffffff', margin: '0 0 0.8rem 0' }}>
-                  Quick Actions
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
-                  <button
-                    onClick={() => setActiveTab("ATTENDANCE")}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1px solid rgba(2, 132, 199, 0.25)', background: 'rgba(7, 10, 16, 0.65)', cursor: 'pointer', fontWeight: 700, fontSize: '0.76rem', color: '#ffffff', transition: 'all 0.2s ease' }}
-                  >
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <Clock size={15} color="#0284c7" /> Record Today's Punch
-                    </span>
-                    <ArrowRight size={13} color="#0284c7" />
-                  </button>
-
-                  <button
-                    onClick={() => setActiveTab("CALENDAR")}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1px solid rgba(139, 92, 246, 0.25)', background: 'rgba(7, 10, 16, 0.65)', cursor: 'pointer', fontWeight: 700, fontSize: '0.76rem', color: '#ffffff', transition: 'all 0.2s ease' }}
-                  >
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <Calendar size={15} color="#8b5cf6" /> Corporate Holidays
-                    </span>
-                    <ArrowRight size={13} color="#8b5cf6" />
-                  </button>
-
-                  <button
-                    onClick={() => setActiveTab("DIRECTORY")}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.25)', background: 'rgba(7, 10, 16, 0.65)', cursor: 'pointer', fontWeight: 700, fontSize: '0.76rem', color: '#ffffff', transition: 'all 0.2s ease' }}
-                  >
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <Building size={15} color="#10b981" /> Colleague Directory
-                    </span>
-                    <ArrowRight size={13} color="#10b981" />
-                  </button>
                 </div>
-              </div>
-            </div>
+              ))}
 
+              {filteredTasks.length === 0 && (
+                <div className="glass-card" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', fontSize: '0.9rem' }}>
+                  No tasks found under this filter.
+                </div>
+              )}
+            </div>
           </div>
         )}
 
-        {/* TAB 2: DAILY ATTENDANCE PUNCH (Punch In, Punch Out, Half Day, On Leave) */}
+        {/* TAB 2: ATTENDANCE CLOCK */}
         {activeTab === "ATTENDANCE" && (
-          <div className="glass-card" style={{ maxWidth: '640px', margin: '0 auto', padding: '1.4rem 1.6rem', textAlign: 'center', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '16px' }}>
-            <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'rgba(7, 10, 16, 0.65)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.6rem auto', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
-              <Clock color="#38bdf8" size={22} />
+          <div className="glass-card" style={{ maxWidth: '680px', margin: '0 auto', padding: '2.5rem', textAlign: 'center' }}>
+            <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.35)', color: '#38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.2rem auto' }}>
+              <Clock size={28} color="#38bdf8" />
             </div>
 
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.25rem' }}>
-              Daily Attendance Clock
+            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#00f5d4', letterSpacing: '1px', fontFamily: 'monospace', marginBottom: '0.3rem' }}>
+              {currentTime || "--:--:--"}
+            </div>
+
+            <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.4rem' }}>
+              Daily Enterprise Attendance Clock
             </h3>
-            <p style={{ color: '#94a3b8', fontSize: '0.78rem', marginBottom: '1.2rem' }}>
-              Punch in at start of shift, record punch out, mark half day, or apply leave.
+            <p style={{ color: '#94a3b8', fontSize: '0.86rem', marginBottom: '2rem' }}>
+              Record your official shift punch in, punch out, half-day, or log planned absence.
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.7rem' }}>
-
-              {/* Punch In */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.8rem', marginBottom: '1.8rem' }}>
               <button
                 onClick={() => handleAttendancePunch("PUNCH_IN")}
                 style={{
-                  padding: '0.85rem 0.5rem',
-                  borderRadius: '10px',
-                  border: currentUser.status === "PRESENT" ? '1.5px solid #00f5d4' : '1px solid rgba(56, 189, 248, 0.25)',
-                  background: currentUser.status === "PRESENT" ? 'rgba(0, 245, 212, 0.18)' : 'rgba(7, 10, 16, 0.65)',
+                  padding: '1.1rem 0.5rem',
+                  borderRadius: '12px',
+                  border: currentUser.status === "PRESENT" ? '1.5px solid #00f5d4' : '1px solid rgba(255, 255, 255, 0.1)',
+                  background: currentUser.status === "PRESENT" ? 'rgba(0, 245, 212, 0.18)' : 'rgba(16, 24, 40, 0.6)',
                   color: '#ffffff',
                   cursor: 'pointer',
-                  transition: 'all 0.15s',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '0.35rem',
-                  boxShadow: currentUser.status === "PRESENT" ? '0 0 15px rgba(0, 245, 212, 0.25)' : 'none'
+                  gap: '0.4rem',
+                  boxShadow: currentUser.status === "PRESENT" ? '0 0 20px rgba(0, 245, 212, 0.3)' : 'none'
                 }}
               >
-                <CheckCircle2 color="#00f5d4" size={22} />
-                <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#00f5d4' }}>Punch In</div>
-                <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>Shift Start</div>
+                <CheckCircle2 color="#00f5d4" size={24} />
+                <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#00f5d4' }}>Punch In</div>
+                <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Shift Start</div>
               </button>
 
-              {/* Punch Out */}
               <button
                 onClick={() => handleAttendancePunch("PUNCH_OUT")}
                 style={{
-                  padding: '0.85rem 0.5rem',
-                  borderRadius: '10px',
-                  border: '1px solid rgba(56, 189, 248, 0.3)',
-                  background: 'rgba(7, 10, 16, 0.65)',
+                  padding: '1.1rem 0.5rem',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  background: 'rgba(16, 24, 40, 0.6)',
                   color: '#ffffff',
                   cursor: 'pointer',
-                  transition: 'all 0.15s',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '0.35rem'
+                  gap: '0.4rem'
                 }}
               >
-                <LogOut color="#38bdf8" size={22} />
-                <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#38bdf8' }}>Punch Out</div>
-                <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>Shift End</div>
+                <LogOut color="#38bdf8" size={24} />
+                <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#38bdf8' }}>Punch Out</div>
+                <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Shift End</div>
               </button>
 
-              {/* Half Day */}
               <button
                 onClick={() => handleAttendancePunch("HALF_DAY")}
                 style={{
-                  padding: '0.85rem 0.5rem',
-                  borderRadius: '10px',
-                  border: currentUser.status === "HALF_DAY" ? '1.5px solid #ffc107' : '1px solid rgba(56, 189, 248, 0.25)',
-                  background: currentUser.status === "HALF_DAY" ? 'rgba(245, 158, 11, 0.18)' : 'rgba(7, 10, 16, 0.65)',
+                  padding: '1.1rem 0.5rem',
+                  borderRadius: '12px',
+                  border: currentUser.status === "HALF_DAY" ? '1.5px solid #fbbf24' : '1px solid rgba(255, 255, 255, 0.1)',
+                  background: currentUser.status === "HALF_DAY" ? 'rgba(245, 158, 11, 0.18)' : 'rgba(16, 24, 40, 0.6)',
                   color: '#ffffff',
                   cursor: 'pointer',
-                  transition: 'all 0.15s',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '0.35rem',
-                  boxShadow: currentUser.status === "HALF_DAY" ? '0 0 15px rgba(245, 158, 11, 0.25)' : 'none'
+                  gap: '0.4rem',
+                  boxShadow: currentUser.status === "HALF_DAY" ? '0 0 20px rgba(245, 158, 11, 0.3)' : 'none'
                 }}
               >
-                <Clock3 color="#fbbf24" size={22} />
-                <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#fbbf24' }}>Half Day</div>
-                <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>Half Shift</div>
+                <Clock3 color="#fbbf24" size={24} />
+                <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#fbbf24' }}>Half Day</div>
+                <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Half Shift</div>
               </button>
 
-              {/* On Leave */}
               <button
                 onClick={() => handleAttendancePunch("ON_LEAVE")}
                 style={{
-                  padding: '0.85rem 0.5rem',
-                  borderRadius: '10px',
-                  border: currentUser.status === "ON_LEAVE" ? '1.5px solid #ec4899' : '1px solid rgba(56, 189, 248, 0.25)',
-                  background: currentUser.status === "ON_LEAVE" ? 'rgba(236, 72, 153, 0.22)' : 'rgba(7, 10, 16, 0.65)',
+                  padding: '1.1rem 0.5rem',
+                  borderRadius: '12px',
+                  border: currentUser.status === "ON_LEAVE" ? '1.5px solid #ec4899' : '1px solid rgba(255, 255, 255, 0.1)',
+                  background: currentUser.status === "ON_LEAVE" ? 'rgba(236, 72, 153, 0.18)' : 'rgba(16, 24, 40, 0.6)',
                   color: '#ffffff',
                   cursor: 'pointer',
-                  transition: 'all 0.15s',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '0.35rem',
-                  boxShadow: currentUser.status === "ON_LEAVE" ? '0 0 15px rgba(236, 72, 153, 0.25)' : 'none'
+                  gap: '0.4rem',
+                  boxShadow: currentUser.status === "ON_LEAVE" ? '0 0 20px rgba(236, 72, 153, 0.3)' : 'none'
                 }}
               >
-                <Calendar color="#f472b6" size={22} />
-                <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#f472b6' }}>Leave</div>
-                <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>Full Day Off</div>
+                <Calendar color="#f472b6" size={24} />
+                <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#f472b6' }}>Leave</div>
+                <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Planned Off</div>
               </button>
-
             </div>
 
-            <div style={{ marginTop: '1.2rem', padding: '0.6rem 0.9rem', borderRadius: '8px', background: 'rgba(7, 10, 16, 0.65)', border: '1px solid rgba(56, 189, 248, 0.25)', fontSize: '0.74rem', color: '#94a3b8' }}>
-              Logged Status: <strong style={{ color: '#ffffff' }}>{currentUser.status}</strong> {currentUser.check_in_time ? `• Time: ${currentUser.check_in_time}` : ''}
+            <div style={{ padding: '0.8rem 1.2rem', borderRadius: '10px', background: 'rgba(9, 13, 22, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.82rem', color: '#94a3b8' }}>
+              Current State: <strong style={{ color: '#ffffff' }}>{currentUser.status}</strong> {currentUser.check_in_time ? `• Punch In: ${currentUser.check_in_time}` : ''} {currentUser.check_out_time ? `• Punch Out: ${currentUser.check_out_time}` : ''}
             </div>
           </div>
         )}
 
-        {/* TAB 3: COMPANY CALENDAR & HOLIDAYS (Small Cards) */}
+        {/* TAB 3: CALENDAR & HOLIDAYS */}
         {activeTab === "CALENDAR" && (
-          <div className="glass-card" style={{ padding: '1rem 1.1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.9rem' }}>
-              <Calendar color="#38bdf8" size={16} />
-              <div>
-                <h3 style={{ fontSize: '0.98rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
-                  Corporate Calendar & Holidays
+          <div className="glass-card" style={{ padding: '2rem 2.2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.8rem' }}>
+              <Calendar color="#00f5d4" size={24} />
+              <h3 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                Corporate Calendar & Observances
+              </h3>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.2rem' }}>
+              {events.map((evt) => (
+                <div 
+                  key={evt.id} 
+                  style={{ 
+                    padding: '1.4rem', 
+                    background: 'rgba(12, 16, 28, 0.85)', 
+                    borderRadius: '14px', 
+                    border: '1px solid rgba(56, 189, 248, 0.25)',
+                    transition: 'border-color 0.2s'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem', flexWrap: 'wrap', gap: '0.4rem' }}>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#00f5d4', textTransform: 'uppercase', background: 'rgba(0, 245, 212, 0.12)', border: '1px solid rgba(0, 245, 212, 0.3)', padding: '0.2rem 0.65rem', borderRadius: '16px' }}>
+                      {evt.type}
+                    </span>
+                    <span style={{ fontSize: '0.94rem', color: '#38bdf8', fontWeight: 700 }}>
+                      📅 {evt.date}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.4rem' }}>
+                    {evt.title}
+                  </div>
+                  <div style={{ fontSize: '0.88rem', color: '#cbd5e1', lineHeight: 1.5 }}>
+                    {evt.description || "Corporate company holiday or company-wide observance."}
+                  </div>
+                </div>
+              ))}
+
+              {events.length === 0 && (
+                <div style={{ color: '#94a3b8', padding: '3rem', textAlign: 'center', fontSize: '0.95rem' }}>
+                  No upcoming calendar events scheduled.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: STAFF DIRECTORY */}
+        {activeTab === "DIRECTORY" && (
+          <div className="glass-card" style={{ padding: '2rem 2.2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.8rem', flexWrap: 'wrap', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Building color="#10b981" size={24} />
+                <h3 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                  Staff Directory ({filteredDirectory.length})
                 </h3>
+              </div>
+
+              <div style={{ position: 'relative', width: '280px' }}>
+                <Search size={16} color="#94a3b8" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '0.85rem' }} />
+                <input
+                  type="text"
+                  placeholder="Search colleagues..."
+                  value={directorySearch}
+                  onChange={(e) => setDirectorySearch(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.9rem 0.6rem 2.5rem',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                    background: 'rgba(7, 10, 16, 0.75)',
+                    color: '#ffffff',
+                    fontSize: '0.9rem',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '0.65rem' }}>
-              {events.map(ev => (
-                <div key={ev.id} style={{ background: 'rgba(7, 10, 16, 0.65)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '0.65rem 0.8rem', borderRadius: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ fontWeight: 800, fontSize: '0.78rem', color: '#ffffff' }}>{ev.title}</div>
-                    <span style={{ fontSize: '0.6rem', fontWeight: 700, padding: '0.1rem 0.4rem', borderRadius: '10px', background: 'var(--lilac-light)', color: '#38bdf8' }}>
-                      {ev.type}
-                    </span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.2rem' }}>
+              {filteredDirectory.map((emp) => (
+                <div 
+                  key={emp.id} 
+                  style={{ 
+                    padding: '1.3rem', 
+                    background: 'rgba(12, 16, 28, 0.85)', 
+                    borderRadius: '14px', 
+                    border: '1px solid rgba(56, 189, 248, 0.25)', 
+                    display: 'flex', 
+                    alignItems: 'flex-start', 
+                    gap: '1rem' 
+                  }}
+                >
+                  <div style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #0284c7, #00f5d4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#06080e',
+                    fontWeight: 800,
+                    fontSize: '1.1rem',
+                    flexShrink: 0
+                  }}>
+                    {emp.name.charAt(0)}
                   </div>
-                  <div style={{ color: '#38bdf8', fontWeight: 800, fontSize: '0.7rem', marginTop: '0.2rem' }}>
-                    📅 {ev.date}
-                  </div>
-                  {ev.description && (
-                    <div style={{ fontSize: '0.66rem', color: '#94a3b8', marginTop: '0.2rem' }}>
-                      {ev.description}
+                  <div>
+                    <div style={{ fontSize: '1.08rem', fontWeight: 800, color: '#ffffff' }}>
+                      {emp.name}
                     </div>
-                  )}
+                    <div style={{ fontSize: '0.88rem', color: '#38bdf8', fontWeight: 600, marginTop: '0.15rem' }}>
+                      {emp.role}
+                    </div>
+                    <div style={{ fontSize: '0.82rem', color: '#94a3b8', marginTop: '0.3rem' }}>
+                      {emp.department}
+                    </div>
+                    <div style={{ fontSize: '0.82rem', color: '#cbd5e1', marginTop: '0.2rem' }}>
+                      {emp.email}
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* TAB 4: STAFF DIRECTORY (Small Table Card) */}
-        {activeTab === "DIRECTORY" && (
-          <div className="glass-card" style={{ padding: '1rem 1.1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', overflowX: 'auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.9rem' }}>
-              <Building color="#38bdf8" size={16} />
-              <div>
-                <h3 style={{ fontSize: '0.98rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
-                  Staff Directory
-                </h3>
-              </div>
-            </div>
-
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', color: '#94a3b8', fontSize: '0.68rem', textTransform: 'uppercase' }}>
-                  <th style={{ padding: '0.4rem 0.5rem' }}>ID</th>
-                  <th style={{ padding: '0.4rem 0.5rem' }}>Name</th>
-                  <th style={{ padding: '0.4rem 0.5rem' }}>Role</th>
-                  <th style={{ padding: '0.4rem 0.5rem' }}>Department</th>
-                  <th style={{ padding: '0.4rem 0.5rem' }}>Email</th>
-                </tr>
-              </thead>
-              <tbody>
-                {directory.map(emp => (
-                  <tr key={emp.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.03)', fontSize: '0.72rem' }}>
-                    <td style={{ padding: '0.45rem 0.5rem', fontWeight: 800, color: '#38bdf8' }}>{emp.id}</td>
-                    <td style={{ padding: '0.45rem 0.5rem', fontWeight: 700, color: '#ffffff' }}>{emp.name}</td>
-                    <td style={{ padding: '0.45rem 0.5rem', color: '#ffffff' }}>{emp.role}</td>
-                    <td style={{ padding: '0.45rem 0.5rem', color: '#94a3b8' }}>{emp.department}</td>
-                    <td style={{ padding: '0.45rem 0.5rem', color: '#94a3b8' }}>{emp.email}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         )}
 
@@ -817,114 +1007,143 @@ export default function EmployeePortal() {
           <div style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.45)',
-            backdropFilter: 'blur(4px)',
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(10px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 1000,
+            zIndex: 9999,
             padding: '1rem'
           }}>
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="glass-card"
               style={{
-                background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)',
+                background: 'rgba(12, 16, 23, 0.95)',
+                border: '1px solid rgba(56, 189, 248, 0.35)',
+                borderRadius: '18px',
+                padding: '1.8rem',
+                maxWidth: '460px',
                 width: '100%',
-                maxWidth: '420px',
-                padding: '1.4rem 1.6rem',
-                borderRadius: '16px',
-                boxShadow: '0 20px 40px rgba(0,0,0,0.15)'
+                boxShadow: '0 25px 50px rgba(0,0,0,0.8)'
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
-                  + Add New Task
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                  Add Task to Work Queue
                 </h3>
-                <button
+                <button 
                   onClick={() => setShowAddTaskModal(false)}
-                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
+                  style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               </div>
 
-              <form onSubmit={handleAddTask} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+              <form onSubmit={handleCreateTask} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: '#ffffff', marginBottom: '0.25rem' }}>
-                    Task Title / Check Description *
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.3rem' }}>
+                    Task Title / Deliverable Description
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Next.js API Architecture Sprint"
+                    placeholder="e.g. Implement Next.js caching layer"
                     value={newTask.task}
-                    onChange={e => setNewTask({ ...newTask, task: e.target.value })}
-                    style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(7, 10, 16, 0.75)', color: '#ffffff', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
+                    onChange={(e) => setNewTask({ ...newTask, task: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem 0.85rem',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      background: 'rgba(7, 10, 16, 0.7)',
+                      color: '#ffffff',
+                      fontSize: '0.86rem',
+                      outline: 'none'
+                    }}
                   />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: '#ffffff', marginBottom: '0.25rem' }}>
-                      Priority
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.3rem' }}>
+                      Priority Level
                     </label>
                     <select
                       value={newTask.priority}
-                      onChange={e => setNewTask({ ...newTask, priority: e.target.value as any })}
-                      style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(7, 10, 16, 0.75)', color: '#ffffff', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
+                      onChange={(e) => setNewTask({ ...newTask, priority: e.target.value as any })}
+                      style={{
+                        width: '100%',
+                        padding: '0.65rem 0.85rem',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        background: 'rgba(7, 10, 16, 0.7)',
+                        color: '#ffffff',
+                        fontSize: '0.86rem',
+                        outline: 'none'
+                      }}
                     >
-                      <option value="Urgent">🔴 Urgent</option>
-                      <option value="High">🟠 High</option>
-                      <option value="Normal">🟢 Normal</option>
+                      <option value="Urgent">Urgent</option>
+                      <option value="High">High</option>
+                      <option value="Normal">Normal</option>
                     </select>
                   </div>
+
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: '#ffffff', marginBottom: '0.25rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.3rem' }}>
                       Target SLA
                     </label>
                     <input
                       type="text"
                       placeholder="e.g. SLA: 4h"
                       value={newTask.time}
-                      onChange={e => setNewTask({ ...newTask, time: e.target.value })}
-                      style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(7, 10, 16, 0.75)', color: '#ffffff', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
+                      onChange={(e) => setNewTask({ ...newTask, time: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '0.65rem 0.85rem',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        background: 'rgba(7, 10, 16, 0.7)',
+                        color: '#ffffff',
+                        fontSize: '0.86rem',
+                        outline: 'none'
+                      }}
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: '#ffffff', marginBottom: '0.25rem' }}>
-                    Initial Status
-                  </label>
-                  <select
-                    value={newTask.status}
-                    onChange={e => setNewTask({ ...newTask, status: e.target.value as any })}
-                    style={{ width: '100%', padding: '0.55rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(7, 10, 16, 0.75)', color: '#ffffff', outline: 'none', fontSize: '0.78rem', boxSizing: 'border-box' }}
-                  >
-                    <option value="In Progress">🔵 In Progress</option>
-                    <option value="Review">🟣 Under Review</option>
-                    <option value="Verified">🟢 Verified / Done</option>
-                    <option value="Blocked">🔴 Blocked</option>
-                  </select>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.8rem', marginTop: '0.6rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.6rem', marginTop: '0.5rem' }}>
                   <button
                     type="button"
                     onClick={() => setShowAddTaskModal(false)}
-                    style={{ padding: '0.55rem 1rem', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)', background: 'rgba(7, 10, 16, 0.65)', cursor: 'pointer', fontWeight: 600, fontSize: '0.76rem' }}
+                    style={{
+                      padding: '0.6rem 1.1rem',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      background: 'transparent',
+                      color: '#cbd5e1',
+                      cursor: 'pointer',
+                      fontSize: '0.82rem',
+                      fontWeight: 700
+                    }}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="btn-primary"
-                    style={{ padding: '0.55rem 1.2rem', fontSize: '0.78rem' }}
+                    style={{
+                      padding: '0.6rem 1.4rem',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #00f5d4 0%, #0284c7 100%)',
+                      color: '#06080e',
+                      cursor: 'pointer',
+                      fontSize: '0.82rem',
+                      fontWeight: 800
+                    }}
                   >
-                    Add Task
+                    Create Task
                   </button>
                 </div>
               </form>
@@ -932,6 +1151,7 @@ export default function EmployeePortal() {
           </div>
         )}
       </AnimatePresence>
+
     </div>
   );
 }

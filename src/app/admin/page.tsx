@@ -26,7 +26,12 @@ import {
   Phone,
   RefreshCw,
   X,
-  ShieldCheck
+  ShieldCheck,
+  Database,
+  Server,
+  HardDrive,
+  FileCode,
+  CheckCircle
 } from "lucide-react";
 import Link from "next/link";
 import Logo from "@/app/components/Logo";
@@ -74,7 +79,13 @@ interface VerificationTask {
 export default function AdminDashboard() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<Employee | null>(null);
-  const [activeTab, setActiveTab] = useState<"EMPLOYEES" | "ATTENDANCE" | "TASKS" | "CALENDAR">("EMPLOYEES");
+  const [activeTab, setActiveTab] = useState<"EMPLOYEES" | "ATTENDANCE" | "TASKS" | "CALENDAR" | "BACKEND">("EMPLOYEES");
+
+  // Backend inspector state
+  const [backendData, setBackendData] = useState<any>(null);
+  const [selectedDbTable, setSelectedDbTable] = useState<string>("employees");
+  const [loadingBackend, setLoadingBackend] = useState<boolean>(false);
+  const [dbSearchTerm, setDbSearchTerm] = useState<string>("");
 
   // Data states
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -144,11 +155,27 @@ export default function AdminDashboard() {
     fetchEmployees();
     fetchEvents();
     fetchTasks();
+    fetchBackendStatus();
   }, [router]);
 
   const showNotification = (text: string, type: "success" | "error" = "success") => {
     setMessage({ text, type });
     setTimeout(() => setMessage(null), 4000);
+  };
+
+  const fetchBackendStatus = async () => {
+    setLoadingBackend(true);
+    try {
+      const res = await fetch("/api/backend-status");
+      const data = await res.json();
+      if (res.ok) {
+        setBackendData(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch backend status", err);
+    } finally {
+      setLoadingBackend(false);
+    }
   };
 
   const fetchEmployees = async () => {
@@ -528,38 +555,38 @@ export default function AdminDashboard() {
         )}
       </AnimatePresence>
 
-      <div style={{ maxWidth: '960px', margin: '1.2rem auto 0 auto', padding: '0 1rem' }}>
+      <div style={{ maxWidth: '1160px', margin: '1.2rem auto 0 auto', padding: '0 1.2rem' }}>
 
-        {/* Real-Time Attendance Statistics Header (Compact) */}
-        <div style={{ marginBottom: '1.2rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem', flexWrap: 'wrap', gap: '0.8rem' }}>
+        {/* Real-Time Attendance Statistics Header */}
+        <div style={{ marginBottom: '1.4rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
-              <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
+              <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
                 Workforce Intelligence & Attendance
               </h1>
-              <p style={{ color: '#94a3b8', fontSize: '0.78rem', margin: '0.15rem 0 0 0' }}>
+              <p style={{ color: '#94a3b8', fontSize: '0.92rem', margin: '0.25rem 0 0 0' }}>
                 Real-time visibility into staff availability, employee credentials, and upcoming company calendar
               </p>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', gap: '0.6rem' }}>
               <button
                 onClick={fetchEmployees}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.35rem',
-                  padding: '0.4rem 0.8rem',
-                  borderRadius: '6px',
+                  gap: '0.45rem',
+                  padding: '0.55rem 1rem',
+                  borderRadius: '8px',
                   background: 'rgba(16, 24, 40, 0.85)',
-                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                  border: '1px solid rgba(56, 189, 248, 0.35)',
                   color: '#ffffff',
                   fontWeight: 700,
-                  fontSize: '0.75rem',
+                  fontSize: '0.88rem',
                   cursor: 'pointer'
                 }}
               >
-                <RefreshCw size={13} /> Refresh
+                <RefreshCw size={15} /> Refresh
               </button>
               <button
                 onClick={() => setShowAddEmpModal(true)}
@@ -567,72 +594,72 @@ export default function AdminDashboard() {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.35rem',
-                  padding: '0.4rem 0.9rem',
-                  fontSize: '0.76rem',
-                  borderRadius: '6px'
+                  gap: '0.45rem',
+                  padding: '0.55rem 1.15rem',
+                  fontSize: '0.88rem',
+                  borderRadius: '8px'
                 }}
               >
-                <UserPlus size={14} /> Create Employee
+                <UserPlus size={16} /> Create Employee
               </button>
             </div>
           </div>
 
-          {/* 4 Attendance Counters (Compact) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+          {/* 4 Attendance Counters */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.9rem' }}>
 
             {/* Total Staff */}
-            <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px' }}>
+            <div className="glass-card" style={{ padding: '1rem 1.2rem', background: 'rgba(16, 24, 40, 0.75)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8' }}>Total Employees</span>
-                <Users size={16} color="#38bdf8" />
+                <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#94a3b8' }}>Total Employees</span>
+                <Users size={18} color="#38bdf8" />
               </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ffffff', marginTop: '0.2rem' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#ffffff', marginTop: '0.3rem' }}>
                 {stats.total}
               </div>
-              <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
+              <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
                 Active in database
               </div>
             </div>
 
             {/* Present Counter */}
-            <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(0, 245, 212, 0.35)', borderRadius: '12px' }}>
+            <div className="glass-card" style={{ padding: '1rem 1.2rem', background: 'rgba(16, 24, 40, 0.75)', backdropFilter: 'blur(16px)', border: '1px solid rgba(0, 245, 212, 0.35)', borderRadius: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#28a745' }}>🟢 Present Today</span>
-                <CheckCircle2 size={16} color="#28a745" />
+                <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#28a745' }}>🟢 Present Today</span>
+                <CheckCircle2 size={18} color="#28a745" />
               </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#28a745', marginTop: '0.2rem' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#28a745', marginTop: '0.3rem' }}>
                 {stats.present}
               </div>
-              <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
+              <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
                 {stats.total > 0 ? Math.round((stats.present / stats.total) * 100) : 0}% of workforce
               </div>
             </div>
 
             {/* Absent Counter */}
-            <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(239, 68, 68, 0.35)', borderRadius: '12px' }}>
+            <div className="glass-card" style={{ padding: '1rem 1.2rem', background: 'rgba(16, 24, 40, 0.75)', backdropFilter: 'blur(16px)', border: '1px solid rgba(239, 68, 68, 0.35)', borderRadius: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#dc3545' }}>🔴 Absent</span>
-                <XCircle size={16} color="#dc3545" />
+                <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#dc3545' }}>🔴 Absent</span>
+                <XCircle size={18} color="#dc3545" />
               </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#dc3545', marginTop: '0.2rem' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#dc3545', marginTop: '0.3rem' }}>
                 {stats.absent}
               </div>
-              <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
+              <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
                 Unscheduled absence
               </div>
             </div>
 
             {/* On Leave Counter */}
-            <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(245, 158, 11, 0.35)', borderRadius: '12px' }}>
+            <div className="glass-card" style={{ padding: '1rem 1.2rem', background: 'rgba(16, 24, 40, 0.75)', backdropFilter: 'blur(16px)', border: '1px solid rgba(245, 158, 11, 0.35)', borderRadius: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#b58105' }}>🟡 On Leave</span>
-                <Clock3 size={16} color="#b58105" />
+                <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#b58105' }}>🟡 On Leave</span>
+                <Clock3 size={18} color="#b58105" />
               </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#b58105', marginTop: '0.2rem' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#b58105', marginTop: '0.3rem' }}>
                 {stats.onLeave}
               </div>
-              <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
+              <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
                 Approved leave logged
               </div>
             </div>
@@ -640,20 +667,21 @@ export default function AdminDashboard() {
           </div>
 
           {/* Visual Progress Bar */}
-          <div style={{ marginTop: '0.8rem', background: 'rgba(255,255,255,0.1)', borderRadius: '8px', height: '6px', overflow: 'hidden', display: 'flex' }}>
+          <div style={{ marginTop: '0.9rem', background: 'rgba(255,255,255,0.1)', borderRadius: '8px', height: '8px', overflow: 'hidden', display: 'flex' }}>
             <div style={{ width: `${stats.total ? (stats.present / stats.total) * 100 : 0}%`, background: '#28a745', transition: 'width 0.5s ease' }} title={`Present: ${stats.present}`} />
             <div style={{ width: `${stats.total ? (stats.onLeave / stats.total) * 100 : 0}%`, background: '#ffc107', transition: 'width 0.5s ease' }} title={`On Leave: ${stats.onLeave}`} />
             <div style={{ width: `${stats.total ? (stats.absent / stats.total) * 100 : 0}%`, background: '#dc3545', transition: 'width 0.5s ease' }} title={`Absent: ${stats.absent}`} />
           </div>
         </div>
 
-        {/* Tab Navigation (Compact) */}
-        <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.2rem', borderBottom: '1px solid rgba(0,0,0,0.08)', paddingBottom: '0.4rem', flexWrap: 'wrap' }}>
+        {/* Tab Navigation */}
+        <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '1.4rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.6rem', flexWrap: 'wrap' }}>
           {[
             { id: "EMPLOYEES", label: "Employee Management", icon: Users },
             { id: "ATTENDANCE", label: "Live Attendance Board", icon: Clock },
             { id: "TASKS", label: `Tasks & Status (${taskStats.inProgress} Active)`, icon: ShieldCheck },
-            { id: "CALENDAR", label: "Upcoming Events & Calendar", icon: Calendar }
+            { id: "CALENDAR", label: "Upcoming Events & Calendar", icon: Calendar },
+            { id: "BACKEND", label: "Database & Backend Explorer", icon: Database }
           ].map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -664,20 +692,20 @@ export default function AdminDashboard() {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.4rem',
-                  padding: '0.45rem 1rem',
-                  borderRadius: '8px',
+                  gap: '0.5rem',
+                  padding: '0.65rem 1.25rem',
+                  borderRadius: '10px',
                   fontWeight: 700,
-                  fontSize: '0.78rem',
+                  fontSize: '0.94rem',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  background: isActive ? 'linear-gradient(135deg, #00f5d4 0%, #0284c7 100%)' : 'rgba(16, 24, 40, 0.65)',
+                  transition: 'all 0.2s ease',
+                  background: isActive ? 'linear-gradient(135deg, #00f5d4 0%, #0284c7 100%)' : 'rgba(16, 24, 40, 0.75)',
                   color: isActive ? '#070a10' : '#cbd5e1',
                   border: isActive ? 'none' : '1px solid rgba(56, 189, 248, 0.25)',
-                  boxShadow: isActive ? '0 4px 12px rgba(122, 91, 156, 0.25)' : 'none'
+                  boxShadow: isActive ? '0 4px 16px rgba(0, 245, 212, 0.35)' : 'none'
                 }}
               >
-                <Icon size={14} />
+                <Icon size={16} />
                 {tab.label}
               </button>
             );
@@ -687,10 +715,10 @@ export default function AdminDashboard() {
         {/* TAB 1: EMPLOYEE MANAGEMENT (SINGLE TABLE) */}
         {activeTab === "EMPLOYEES" && (
           <div>
-            {/* Search & Filter Bar (Compact) */}
-            <div className="glass-card" style={{ padding: '0.7rem 1rem', marginBottom: '1rem', display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px' }}>
-              <div style={{ flex: '1 1 220px', position: 'relative' }}>
-                <Search size={14} color="#38bdf8" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '0.8rem' }} />
+            {/* Search & Filter Bar */}
+            <div className="glass-card" style={{ padding: '0.9rem 1.2rem', marginBottom: '1.2rem', display: 'flex', gap: '0.8rem', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(16, 24, 40, 0.75)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '14px' }}>
+              <div style={{ flex: '1 1 240px', position: 'relative' }}>
+                <Search size={16} color="#38bdf8" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '0.9rem' }} />
                 <input
                   type="text"
                   placeholder="Search by name, ID, username, role or department..."
@@ -698,25 +726,25 @@ export default function AdminDashboard() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '0.45rem 0.8rem 0.45rem 2.2rem',
+                    padding: '0.6rem 0.9rem 0.6rem 2.5rem',
                     borderRadius: '8px',
-                    border: '1px solid rgba(56, 189, 248, 0.25)',
-                    background: 'rgba(7, 10, 16, 0.65)',
+                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                    background: 'rgba(7, 10, 16, 0.75)',
                     color: '#ffffff',
                     outline: 'none',
-                    fontSize: '0.78rem',
+                    fontSize: '0.92rem',
                     boxSizing: 'border-box'
                   }}
                 />
               </div>
 
               {/* Status Filter */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#94a3b8' }}>Status:</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#94a3b8' }}>Status:</span>
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  style={{ padding: '0.4rem 0.7rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.25)', background: 'rgba(7, 10, 16, 0.85)', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', outline: 'none' }}
+                  style={{ padding: '0.55rem 0.9rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(7, 10, 16, 0.9)', color: '#ffffff', fontWeight: 600, fontSize: '0.88rem', outline: 'none' }}
                 >
                   <option value="ALL">All ({stats.total})</option>
                   <option value="PRESENT">Present ({stats.present})</option>
@@ -727,12 +755,12 @@ export default function AdminDashboard() {
               </div>
 
               {/* Department Filter */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#94a3b8' }}>Dept:</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#94a3b8' }}>Dept:</span>
                 <select
                   value={deptFilter}
                   onChange={(e) => setDeptFilter(e.target.value)}
-                  style={{ padding: '0.4rem 0.7rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.25)', background: 'rgba(7, 10, 16, 0.85)', color: '#ffffff', fontWeight: 600, fontSize: '0.75rem', outline: 'none' }}
+                  style={{ padding: '0.55rem 0.9rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(7, 10, 16, 0.9)', color: '#ffffff', fontWeight: 600, fontSize: '0.88rem', outline: 'none' }}
                 >
                   <option value="ALL">All Departments</option>
                   {departments.map(d => (
@@ -742,79 +770,86 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Employee Table (Compact) */}
-            <div className="glass-card" style={{ padding: '0.9rem 1.1rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', overflowX: 'auto', borderRadius: '12px' }}>
+            {/* Employee Table */}
+            <div className="glass-card" style={{ padding: '1.2rem', background: 'rgba(16, 24, 40, 0.75)', backdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', overflowX: 'auto', borderRadius: '14px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1.5px solid rgba(56, 189, 248, 0.25)', color: '#38bdf8', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    <th style={{ padding: '0.5rem 0.6rem' }}>ID</th>
-                    <th style={{ padding: '0.5rem 0.6rem' }}>Staff Name</th>
-                    <th style={{ padding: '0.5rem 0.6rem' }}>Username</th>
-                    <th style={{ padding: '0.5rem 0.6rem' }}>Role</th>
-                    <th style={{ padding: '0.5rem 0.6rem' }}>Department</th>
-                    <th style={{ padding: '0.5rem 0.6rem' }}>Live Status</th>
-                    <th style={{ padding: '0.5rem 0.6rem' }}>Status Toggle</th>
-                    <th style={{ padding: '0.5rem 0.6rem', textAlign: 'right' }}>Actions</th>
+                  <tr style={{ borderBottom: '2px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', fontSize: '0.88rem', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 800 }}>
+                    <th style={{ padding: '0.8rem 0.75rem' }}>EMP ID</th>
+                    <th style={{ padding: '0.8rem 0.75rem' }}>Staff Name</th>
+                    <th style={{ padding: '0.8rem 0.75rem' }}>Username</th>
+                    <th style={{ padding: '0.8rem 0.75rem' }}>Role</th>
+                    <th style={{ padding: '0.8rem 0.75rem' }}>Department</th>
+                    <th style={{ padding: '0.8rem 0.75rem' }}>Live Status</th>
+                    <th style={{ padding: '0.8rem 0.75rem' }}>Quick Status Toggle</th>
+                    <th style={{ padding: '0.8rem 0.75rem', textAlign: 'right' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredEmployees.map(emp => {
                     const isRootAdmin = emp.id === "ADM-001";
                     return (
-                      <tr key={emp.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', fontSize: '0.76rem', transition: 'background 0.2s' }}>
-                        <td style={{ padding: '0.5rem 0.6rem', fontWeight: 800, color: '#00f5d4' }}>
+                      <tr key={emp.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: '0.92rem', transition: 'background 0.2s' }}>
+                        <td style={{ padding: '0.8rem 0.75rem', fontWeight: 800, color: '#00f5d4' }}>
                           {emp.id}
                         </td>
-                        <td style={{ padding: '0.5rem 0.6rem' }}>
-                          <div style={{ fontWeight: 700, color: '#ffffff' }}>{emp.name}</div>
-                          <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>{emp.email}</div>
+                        <td style={{ padding: '0.8rem 0.75rem' }}>
+                          <div style={{ fontWeight: 700, color: '#ffffff', fontSize: '1.05rem' }}>{emp.name}</div>
+                          <div style={{ fontSize: '0.84rem', color: '#94a3b8', marginTop: '0.15rem' }}>{emp.email}</div>
                         </td>
-                        <td style={{ padding: '0.5rem 0.6rem', fontWeight: 600, color: '#ffffff' }}>
-                          <code>{emp.username}</code>
+                        <td style={{ padding: '0.8rem 0.75rem', fontWeight: 600, color: '#e2e8f0' }}>
+                          <code style={{ fontSize: '0.9rem', color: '#38bdf8' }}>{emp.username}</code>
                         </td>
-                        <td style={{ padding: '0.5rem 0.6rem', color: '#ffffff' }}>
+                        <td style={{ padding: '0.8rem 0.75rem', color: '#ffffff', fontWeight: 600 }}>
                           {emp.role}
                         </td>
-                        <td style={{ padding: '0.5rem 0.6rem', color: '#94a3b8' }}>
+                        <td style={{ padding: '0.8rem 0.75rem', color: '#cbd5e1' }}>
                           {emp.department}
                         </td>
-                        <td style={{ padding: '0.5rem 0.6rem' }}>
+                        <td style={{ padding: '0.8rem 0.75rem' }}>
                           {emp.status === "PRESENT" && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(0, 245, 212, 0.15)', color: '#00f5d4', border: '1px solid rgba(0, 245, 212, 0.35)', padding: '0.2rem 0.55rem', borderRadius: '14px', fontWeight: 700, fontSize: '0.7rem' }}>
-                              <CheckCircle2 size={12} /> Present ({emp.check_in_time || 'Logged'})
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: 'rgba(0, 245, 212, 0.15)', color: '#00f5d4', border: '1px solid rgba(0, 245, 212, 0.35)', padding: '0.35rem 0.75rem', borderRadius: '16px', fontWeight: 700, fontSize: '0.84rem' }}>
+                              <CheckCircle2 size={14} /> Present ({emp.check_in_time || 'Logged'})
                             </span>
                           )}
                           {emp.status === "HALF_DAY" && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.35)', padding: '0.2rem 0.55rem', borderRadius: '14px', fontWeight: 700, fontSize: '0.7rem' }}>
-                              <Clock3 size={12} /> Half Day ({emp.check_in_time || 'Logged'})
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.35)', padding: '0.35rem 0.75rem', borderRadius: '16px', fontWeight: 700, fontSize: '0.84rem' }}>
+                              <Clock3 size={14} /> Half Day ({emp.check_in_time || 'Logged'})
                             </span>
                           )}
                           {emp.status === "ABSENT" && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.35)', padding: '0.2rem 0.55rem', borderRadius: '14px', fontWeight: 700, fontSize: '0.7rem' }}>
-                              <XCircle size={12} /> Absent
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.35)', padding: '0.35rem 0.75rem', borderRadius: '16px', fontWeight: 700, fontSize: '0.84rem' }}>
+                              <XCircle size={14} /> Absent
                             </span>
                           )}
                           {emp.status === "ON_LEAVE" && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(236, 72, 153, 0.15)', color: '#f472b6', border: '1px solid rgba(236, 72, 153, 0.35)', padding: '0.2rem 0.55rem', borderRadius: '14px', fontWeight: 700, fontSize: '0.7rem' }}>
-                              <Clock3 size={12} /> On Leave
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: 'rgba(236, 72, 153, 0.15)', color: '#f472b6', border: '1px solid rgba(236, 72, 153, 0.35)', padding: '0.35rem 0.75rem', borderRadius: '16px', fontWeight: 700, fontSize: '0.84rem' }}>
+                              <Clock3 size={14} /> On Leave
                             </span>
                           )}
                         </td>
-                        {/* 1-Click Status Switcher */}
-                        <td style={{ padding: '0.5rem 0.6rem' }}>
-                          <div style={{ display: 'flex', gap: '0.2rem' }}>
+                        {/* 1-Click Status Switcher (2x2 Grid) */}
+                        <td style={{ padding: '0.8rem 0.75rem' }}>
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(2, 66px)',
+                            gap: '0.35rem',
+                            width: 'fit-content'
+                          }}>
                             <button
                               onClick={() => handleStatusChange(emp.id, "PRESENT")}
                               title="Mark Present"
                               style={{
-                                padding: '0.2rem 0.4rem',
-                                borderRadius: '4px',
+                                padding: '0.38rem 0.3rem',
+                                borderRadius: '6px',
                                 border: '1px solid #28a745',
                                 background: emp.status === "PRESENT" ? '#28a745' : 'rgba(16, 24, 40, 0.85)',
                                 color: emp.status === "PRESENT" ? '#fff' : '#28a745',
-                                fontSize: '0.66rem',
+                                fontSize: '0.8rem',
                                 fontWeight: 700,
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                textAlign: 'center',
+                                whiteSpace: 'nowrap'
                               }}
                             >
                               Present
@@ -823,14 +858,16 @@ export default function AdminDashboard() {
                               onClick={() => handleStatusChange(emp.id, "HALF_DAY")}
                               title="Mark Half Day"
                               style={{
-                                padding: '0.2rem 0.4rem',
-                                borderRadius: '4px',
+                                padding: '0.38rem 0.3rem',
+                                borderRadius: '6px',
                                 border: '1px solid #ffc107',
                                 background: emp.status === "HALF_DAY" ? '#ffc107' : 'rgba(16, 24, 40, 0.85)',
                                 color: emp.status === "HALF_DAY" ? '#000' : '#856404',
-                                fontSize: '0.66rem',
+                                fontSize: '0.8rem',
                                 fontWeight: 700,
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                textAlign: 'center',
+                                whiteSpace: 'nowrap'
                               }}
                             >
                               Half
@@ -839,14 +876,16 @@ export default function AdminDashboard() {
                               onClick={() => handleStatusChange(emp.id, "ABSENT")}
                               title="Mark Absent"
                               style={{
-                                padding: '0.2rem 0.4rem',
-                                borderRadius: '4px',
+                                padding: '0.38rem 0.3rem',
+                                borderRadius: '6px',
                                 border: '1px solid #dc3545',
                                 background: emp.status === "ABSENT" ? '#dc3545' : 'rgba(16, 24, 40, 0.85)',
                                 color: emp.status === "ABSENT" ? '#fff' : '#dc3545',
-                                fontSize: '0.66rem',
+                                fontSize: '0.8rem',
                                 fontWeight: 700,
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                textAlign: 'center',
+                                whiteSpace: 'nowrap'
                               }}
                             >
                               Absent
@@ -855,14 +894,16 @@ export default function AdminDashboard() {
                               onClick={() => handleStatusChange(emp.id, "ON_LEAVE")}
                               title="Mark On Leave"
                               style={{
-                                padding: '0.2rem 0.4rem',
-                                borderRadius: '4px',
+                                padding: '0.38rem 0.3rem',
+                                borderRadius: '6px',
                                 border: '1px solid #c2185b',
                                 background: emp.status === "ON_LEAVE" ? '#c2185b' : 'rgba(16, 24, 40, 0.85)',
                                 color: emp.status === "ON_LEAVE" ? '#fff' : '#c2185b',
-                                fontSize: '0.66rem',
+                                fontSize: '0.8rem',
                                 fontWeight: 700,
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                textAlign: 'center',
+                                whiteSpace: 'nowrap'
                               }}
                             >
                               Leave
@@ -870,24 +911,27 @@ export default function AdminDashboard() {
                           </div>
                         </td>
                         {/* Actions */}
-                        <td style={{ padding: '1rem', textAlign: 'right' }}>
+                        <td style={{ padding: '0.8rem 0.75rem', textAlign: 'right' }}>
                           {!isRootAdmin ? (
                             <button
                               onClick={() => handleDeleteEmployee(emp.id, emp.name)}
                               title="Delete Employee"
                               style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#dc3545',
+                                background: 'rgba(239, 68, 68, 0.12)',
+                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                color: '#f87171',
                                 cursor: 'pointer',
-                                padding: '0.4rem',
-                                borderRadius: '6px'
+                                padding: '0.5rem',
+                                borderRadius: '8px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
                               }}
                             >
-                              <Trash2 size={16} />
+                              <Trash2 size={18} />
                             </button>
                           ) : (
-                            <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 700 }}>
+                            <span style={{ fontSize: '0.84rem', color: '#94a3b8', fontWeight: 700 }}>
                               System Root
                             </span>
                           )}
@@ -897,7 +941,7 @@ export default function AdminDashboard() {
                   })}
                   {filteredEmployees.length === 0 && (
                     <tr>
-                      <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                      <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', fontSize: '0.95rem' }}>
                         No employee records found matching your filters.
                       </td>
                     </tr>
@@ -911,108 +955,113 @@ export default function AdminDashboard() {
         {/* TAB 2: LIVE ATTENDANCE BOARD */}
         {activeTab === "ATTENDANCE" && (
           <div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.9rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: '1.2rem' }}>
 
-              {/* Present Column (Compact) */}
-              <div className="glass-card" style={{ padding: '0.9rem 1rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderTop: '3px solid #28a745', borderRadius: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
-                  <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#1e7e34', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <CheckCircle2 size={15} /> Present ({stats.present})
+              {/* Present Column */}
+              <div className="glass-card" style={{ padding: '1.3rem 1.4rem', background: 'rgba(16, 24, 40, 0.75)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderTop: '4px solid #28a745', borderRadius: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem' }}>
+                  <div style={{ fontWeight: 800, fontSize: '1.15rem', color: '#34d399', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <CheckCircle2 size={18} /> Present ({stats.present})
                   </div>
-                  <span style={{ background: 'rgba(0, 245, 212, 0.15)', color: '#00f5d4', border: '1px solid rgba(0, 245, 212, 0.35)', fontWeight: 800, fontSize: '0.65rem', padding: '0.15rem 0.45rem', borderRadius: '10px' }}>
+                  <span style={{ background: 'rgba(0, 245, 212, 0.15)', color: '#00f5d4', border: '1px solid rgba(0, 245, 212, 0.35)', fontWeight: 800, fontSize: '0.8rem', padding: '0.25rem 0.65rem', borderRadius: '12px' }}>
                     Active
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   {employees.filter(e => e.status === "PRESENT").map(emp => (
-                    <div key={emp.id} style={{ background: 'rgba(16, 24, 40, 0.85)', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div key={emp.id} style={{ background: 'rgba(16, 24, 40, 0.9)', padding: '0.85rem 1rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: '0.78rem', color: '#ffffff' }}>{emp.name}</div>
-                        <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>{emp.id} • {emp.role}</div>
-                        <div style={{ fontSize: '0.65rem', color: '#28a745', marginTop: '0.1rem', fontWeight: 600 }}>
+                        <div style={{ fontWeight: 700, fontSize: '1.02rem', color: '#ffffff' }}>{emp.name}</div>
+                        <div style={{ fontSize: '0.86rem', color: '#94a3b8', marginTop: '0.15rem' }}>{emp.id} • {emp.role}</div>
+                        <div style={{ fontSize: '0.84rem', color: '#34d399', marginTop: '0.25rem', fontWeight: 700 }}>
                           In: {emp.check_in_time || '09:00 AM'}
                         </div>
                       </div>
                       <button
                         onClick={() => handleStatusChange(emp.id, "ABSENT")}
-                        style={{ fontSize: '0.68rem', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid rgba(0,0,0,0.1)', background: '#f8f9fa', cursor: 'pointer', fontWeight: 600 }}
+                        style={{ fontSize: '0.82rem', padding: '0.4rem 0.8rem', borderRadius: '6px', border: '1px solid rgba(239, 68, 68, 0.4)', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', cursor: 'pointer', fontWeight: 700 }}
                       >
                         Absent
                       </button>
                     </div>
                   ))}
+                  {employees.filter(e => e.status === "PRESENT").length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '1.5rem', color: '#94a3b8', fontSize: '0.92rem' }}>
+                      No staff checked in yet today.
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Absent Column (Compact) */}
-              <div className="glass-card" style={{ padding: '0.9rem 1rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderTop: '3px solid #dc3545', borderRadius: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
-                  <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#dc3545', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <XCircle size={15} /> Absent ({stats.absent})
+              {/* Absent Column */}
+              <div className="glass-card" style={{ padding: '1.3rem 1.4rem', background: 'rgba(16, 24, 40, 0.75)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderTop: '4px solid #dc3545', borderRadius: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem' }}>
+                  <div style={{ fontWeight: 800, fontSize: '1.15rem', color: '#f87171', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <XCircle size={18} /> Absent ({stats.absent})
                   </div>
-                  <span style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.35)', fontWeight: 800, fontSize: '0.65rem', padding: '0.15rem 0.45rem', borderRadius: '10px' }}>
+                  <span style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.35)', fontWeight: 800, fontSize: '0.8rem', padding: '0.25rem 0.65rem', borderRadius: '12px' }}>
                     Off-Duty
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   {employees.filter(e => e.status === "ABSENT").map(emp => (
-                    <div key={emp.id} style={{ background: 'rgba(16, 24, 40, 0.85)', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div key={emp.id} style={{ background: 'rgba(16, 24, 40, 0.9)', padding: '0.85rem 1rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: '0.78rem', color: '#ffffff' }}>{emp.name}</div>
-                        <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>{emp.id} • {emp.department}</div>
-                        <div style={{ fontSize: '0.65rem', color: '#dc3545', marginTop: '0.1rem', fontWeight: 600 }}>
+                        <div style={{ fontWeight: 700, fontSize: '1.02rem', color: '#ffffff' }}>{emp.name}</div>
+                        <div style={{ fontSize: '0.86rem', color: '#94a3b8', marginTop: '0.15rem' }}>{emp.id} • {emp.department}</div>
+                        <div style={{ fontSize: '0.84rem', color: '#f87171', marginTop: '0.25rem', fontWeight: 700 }}>
                           No Check-in
                         </div>
                       </div>
                       <button
                         onClick={() => handleStatusChange(emp.id, "PRESENT")}
-                        style={{ fontSize: '0.68rem', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid #28a745', background: '#28a745', color: 'rgba(16, 24, 40, 0.85)', cursor: 'pointer', fontWeight: 700 }}
+                        style={{ fontSize: '0.82rem', padding: '0.4rem 0.8rem', borderRadius: '6px', border: '1px solid #28a745', background: '#28a745', color: '#ffffff', cursor: 'pointer', fontWeight: 700 }}
                       >
                         Present
                       </button>
                     </div>
                   ))}
                   {stats.absent === 0 && (
-                    <div style={{ textAlign: 'center', padding: '1.2rem', color: '#94a3b8', fontSize: '0.75rem' }}>
+                    <div style={{ textAlign: 'center', padding: '1.8rem', color: '#94a3b8', fontSize: '0.92rem' }}>
                       No absent staff today! 100% accounted for.
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* On Leave Column (Compact) */}
-              <div className="glass-card" style={{ padding: '0.9rem 1rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderTop: '3px solid #ffc107', borderRadius: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
-                  <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#b58105', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <Clock3 size={15} /> On Leave ({stats.onLeave})
+              {/* On Leave Column */}
+              <div className="glass-card" style={{ padding: '1.3rem 1.4rem', background: 'rgba(16, 24, 40, 0.75)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderTop: '4px solid #ffc107', borderRadius: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem' }}>
+                  <div style={{ fontWeight: 800, fontSize: '1.15rem', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Clock3 size={18} /> On Leave ({stats.onLeave})
                   </div>
-                  <span style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.35)', fontWeight: 800, fontSize: '0.65rem', padding: '0.15rem 0.45rem', borderRadius: '10px' }}>
+                  <span style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.35)', fontWeight: 800, fontSize: '0.8rem', padding: '0.25rem 0.65rem', borderRadius: '12px' }}>
                     Approved
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   {employees.filter(e => e.status === "ON_LEAVE").map(emp => (
-                    <div key={emp.id} style={{ background: 'rgba(16, 24, 40, 0.85)', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div key={emp.id} style={{ background: 'rgba(16, 24, 40, 0.9)', padding: '0.85rem 1rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: '0.78rem', color: '#ffffff' }}>{emp.name}</div>
-                        <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>{emp.id} • {emp.department}</div>
-                        <div style={{ fontSize: '0.65rem', color: '#b58105', marginTop: '0.1rem', fontWeight: 600 }}>
+                        <div style={{ fontWeight: 700, fontSize: '1.02rem', color: '#ffffff' }}>{emp.name}</div>
+                        <div style={{ fontSize: '0.86rem', color: '#94a3b8', marginTop: '0.15rem' }}>{emp.id} • {emp.department}</div>
+                        <div style={{ fontSize: '0.84rem', color: '#fbbf24', marginTop: '0.25rem', fontWeight: 700 }}>
                           Leave Granted
                         </div>
                       </div>
                       <button
                         onClick={() => handleStatusChange(emp.id, "PRESENT")}
-                        style={{ fontSize: '0.68rem', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid #28a745', background: '#28a745', color: 'rgba(16, 24, 40, 0.85)', cursor: 'pointer', fontWeight: 700 }}
+                        style={{ fontSize: '0.82rem', padding: '0.4rem 0.8rem', borderRadius: '6px', border: '1px solid #28a745', background: '#28a745', color: '#ffffff', cursor: 'pointer', fontWeight: 700 }}
                       >
                         Present
                       </button>
                     </div>
                   ))}
                   {stats.onLeave === 0 && (
-                    <div style={{ textAlign: 'center', padding: '1.2rem', color: '#94a3b8', fontSize: '0.75rem' }}>
+                    <div style={{ textAlign: 'center', padding: '1.8rem', color: '#94a3b8', fontSize: '0.92rem' }}>
                       No employees on leave today.
                     </div>
                   )}
@@ -1025,46 +1074,48 @@ export default function AdminDashboard() {
 
         {/* TAB 3: UPCOMING EVENTS & INTERACTIVE CALENDAR */}
         {activeTab === "CALENDAR" && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '2rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '2rem' }}>
 
             {/* Calendar Month View */}
-            <div className="glass-card" style={{ padding: '2rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <div className="glass-card" style={{ padding: '2.2rem', background: 'rgba(16, 24, 40, 0.75)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.8rem' }}>
                 <div>
-                  <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#ffffff' }}>
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
                     {monthNames[currentMonthDate.getMonth()]} {currentMonthDate.getFullYear()}
                   </h3>
-                  <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                  <div style={{ fontSize: '0.9rem', color: '#94a3b8', marginTop: '0.2rem' }}>
                     {events.length} company events recorded
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.6rem' }}>
                   <button
                     onClick={() => setCurrentMonthDate(new Date(currentMonthDate.getFullYear(), currentMonthDate.getMonth() - 1, 1))}
-                    style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: 'rgba(16, 24, 40, 0.85)', cursor: 'pointer' }}
+                    style={{ padding: '0.55rem 0.95rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(16, 24, 40, 0.85)', color: '#ffffff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    title="Previous Month"
                   >
-                    <ChevronLeft size={16} />
+                    <ChevronLeft size={18} />
                   </button>
                   <button
                     onClick={() => setCurrentMonthDate(new Date(currentMonthDate.getFullYear(), currentMonthDate.getMonth() + 1, 1))}
-                    style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: 'rgba(16, 24, 40, 0.85)', cursor: 'pointer' }}
+                    style={{ padding: '0.55rem 0.95rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.3)', background: 'rgba(16, 24, 40, 0.85)', color: '#ffffff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    title="Next Month"
                   >
-                    <ChevronRight size={16} />
+                    <ChevronRight size={18} />
                   </button>
                 </div>
               </div>
 
               {/* Days header */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.5rem', textAlign: 'center', fontWeight: 700, fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.6rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.6rem', textAlign: 'center', fontWeight: 800, fontSize: '0.95rem', color: '#38bdf8', marginBottom: '0.8rem' }}>
                 <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
               </div>
 
-              {/* Day cells */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.5rem' }}>
+              {/* Day cells with crystal-clear high contrast dates */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.6rem' }}>
                 {calendarDays.map((c, idx) => {
                   if (!c.day) {
-                    return <div key={idx} style={{ aspectRatio: '1', borderRadius: '8px' }} />;
+                    return <div key={idx} style={{ aspectRatio: '1', borderRadius: '10px' }} />;
                   }
 
                   const hasEvent = c.hasEvents.length > 0;
@@ -1073,27 +1124,36 @@ export default function AdminDashboard() {
                   return (
                     <div
                       key={idx}
-                      title={c.hasEvents.map(e => e.title).join(", ")}
+                      title={c.hasEvents.map(e => e.title).join(", ") || `Day ${c.day}`}
                       style={{
                         aspectRatio: '1',
-                        borderRadius: '10px',
+                        borderRadius: '12px',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        border: hasEvent ? '2px solid #38bdf8' : '1px solid rgba(0,0,0,0.06)',
-                        background: hasEvent ? (isAudit ? 'rgba(122, 91, 156, 0.15)' : 'rgba(244, 238, 248, 0.9)') : '#ffffff',
+                        border: hasEvent ? '2px solid #00f5d4' : '1px solid rgba(56, 189, 248, 0.2)',
+                        background: hasEvent
+                          ? (isAudit ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(56, 189, 248, 0.2) 100%)' : 'linear-gradient(135deg, rgba(2, 132, 199, 0.35) 0%, rgba(0, 245, 212, 0.2) 100%)')
+                          : 'rgba(12, 16, 28, 0.85)',
+                        boxShadow: hasEvent ? '0 0 16px rgba(0, 245, 212, 0.35)' : 'none',
                         cursor: hasEvent ? 'pointer' : 'default',
-                        position: 'relative'
+                        position: 'relative',
+                        transition: 'all 0.2s ease'
                       }}
                     >
-                      <span style={{ fontWeight: hasEvent ? 800 : 500, fontSize: '0.9rem', color: hasEvent ? '#38bdf8' : '#ffffff' }}>
+                      <span style={{
+                        fontWeight: 800,
+                        fontSize: hasEvent ? '1.2rem' : '1.15rem',
+                        color: hasEvent ? '#00f5d4' : '#ffffff',
+                        lineHeight: 1
+                      }}>
                         {c.day}
                       </span>
                       {hasEvent && (
-                        <div style={{ display: 'flex', gap: '2px', marginTop: '2px' }}>
+                        <div style={{ display: 'flex', gap: '3px', marginTop: '4px' }}>
                           {c.hasEvents.map((_, eIdx) => (
-                            <span key={eIdx} style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#38bdf8' }} />
+                            <span key={eIdx} style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#00f5d4', boxShadow: '0 0 6px #00f5d4' }} />
                           ))}
                         </div>
                       )}
@@ -1102,55 +1162,60 @@ export default function AdminDashboard() {
                 })}
               </div>
 
-              <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1.5rem', fontSize: '0.8rem', color: '#94a3b8' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#38bdf8' }} />
-                  <span>Company Event / Holiday</span>
+              <div style={{ marginTop: '1.8rem', display: 'flex', gap: '1.8rem', fontSize: '0.9rem', color: '#cbd5e1', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#00f5d4', boxShadow: '0 0 8px #00f5d4' }} />
+                  <span>Corporate Event / Scheduled Observance</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#a855f7', boxShadow: '0 0 8px #a855f7' }} />
+                  <span>Audit / Compliance Milestone</span>
                 </div>
               </div>
             </div>
 
             {/* Event List & Add Event Trigger */}
-            <div className="glass-card" style={{ padding: '2rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#ffffff' }}>
+            <div className="glass-card" style={{ padding: '2.2rem', background: 'rgba(16, 24, 40, 0.75)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.8rem' }}>
+                <h3 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
                   Upcoming Events & Holidays
                 </h3>
                 <button
                   onClick={() => setShowAddEventModal(true)}
                   className="btn-primary"
-                  style={{ padding: '0.5rem 1.2rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                  style={{ padding: '0.6rem 1.3rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.45rem', borderRadius: '8px' }}
                 >
-                  <Plus size={16} /> Add Event
+                  <Plus size={18} /> Add Event
                 </button>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '420px', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '460px', overflowY: 'auto' }}>
                 {events.map(ev => (
                   <div
                     key={ev.id}
                     style={{
-                      padding: '1.2rem',
-                      borderRadius: '12px',
-                      background: 'rgba(16, 24, 40, 0.85)',
-                      border: '1px solid rgba(0,0,0,0.06)',
+                      padding: '1.3rem 1.4rem',
+                      borderRadius: '14px',
+                      background: 'rgba(12, 16, 28, 0.85)',
+                      border: '1px solid rgba(56, 189, 248, 0.25)',
                       display: 'flex',
                       justifyContent: 'space-between',
-                      alignItems: 'flex-start'
+                      alignItems: 'flex-start',
+                      transition: 'border-color 0.2s'
                     }}
                   >
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <span style={{ fontSize: '1rem', fontWeight: 800, color: '#ffffff' }}>{ev.title}</span>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '20px', background: 'var(--lilac-light)', color: '#38bdf8' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff' }}>{ev.title}</span>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 700, padding: '0.25rem 0.7rem', borderRadius: '20px', background: 'rgba(0, 245, 212, 0.15)', color: '#00f5d4', border: '1px solid rgba(0, 245, 212, 0.35)' }}>
                           {ev.type}
                         </span>
                       </div>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#38bdf8', marginTop: '0.3rem' }}>
+                      <div style={{ fontSize: '0.98rem', fontWeight: 700, color: '#38bdf8', marginTop: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                         📅 {ev.date}
                       </div>
                       {ev.description && (
-                        <div style={{ fontSize: '0.82rem', color: '#94a3b8', marginTop: '0.3rem' }}>
+                        <div style={{ fontSize: '0.9rem', color: '#cbd5e1', marginTop: '0.35rem', lineHeight: 1.5 }}>
                           {ev.description}
                         </div>
                       )}
@@ -1159,12 +1224,17 @@ export default function AdminDashboard() {
                     <button
                       onClick={() => handleDeleteEvent(ev.id)}
                       title="Remove Event"
-                      style={{ background: 'transparent', border: 'none', color: '#dc3545', cursor: 'pointer', padding: '0.3rem' }}
+                      style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', cursor: 'pointer', padding: '0.5rem', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={18} />
                     </button>
                   </div>
                 ))}
+                {events.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', fontSize: '0.95rem' }}>
+                    No upcoming events scheduled. Click "Add Event" to schedule.
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1175,77 +1245,77 @@ export default function AdminDashboard() {
         {activeTab === "TASKS" && (
           <div>
             {/* Task KPI Counters */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '0.8rem', marginBottom: '1.2rem' }}>
-              <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(16, 24, 40, 0.72)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.9rem', marginBottom: '1.4rem' }}>
+              <div className="glass-card" style={{ padding: '1rem 1.2rem', background: 'rgba(16, 24, 40, 0.75)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '14px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8' }}>Total Queue</span>
-                  <ShieldCheck size={16} color="#38bdf8" />
+                  <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#94a3b8' }}>Total Queue</span>
+                  <ShieldCheck size={18} color="#38bdf8" />
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ffffff', marginTop: '0.2rem' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#ffffff', marginTop: '0.3rem' }}>
                   {taskStats.total}
                 </div>
-                <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
+                <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
                   All registered tasks
                 </div>
               </div>
 
-              <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', borderLeft: '4px solid #0284c7', boxShadow: '0 4px 16px rgba(2, 132, 199, 0.08)' }}>
+              <div className="glass-card" style={{ padding: '1rem 1.2rem', background: 'rgba(16, 24, 40, 0.75)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '14px', borderLeft: '4px solid #0284c7' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#0284c7' }}>🔵 In Progress</span>
-                  <Clock size={16} color="#0284c7" />
+                  <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#38bdf8' }}>🔵 In Progress</span>
+                  <Clock size={18} color="#38bdf8" />
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0284c7', marginTop: '0.2rem' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#38bdf8', marginTop: '0.3rem' }}>
                   {taskStats.inProgress}
                 </div>
-                <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
-                  Active development sprints
+                <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                  Active sprints
                 </div>
               </div>
 
-              <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', borderLeft: '4px solid #8b5cf6', boxShadow: '0 4px 16px rgba(139, 92, 246, 0.08)' }}>
+              <div className="glass-card" style={{ padding: '1rem 1.2rem', background: 'rgba(16, 24, 40, 0.75)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '14px', borderLeft: '4px solid #a855f7' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#8b5cf6' }}>🟣 Under Review</span>
-                  <Layers size={16} color="#8b5cf6" />
+                  <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#c084fc' }}>🟣 Under Review</span>
+                  <Layers size={18} color="#c084fc" />
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#8b5cf6', marginTop: '0.2rem' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#c084fc', marginTop: '0.3rem' }}>
                   {taskStats.review}
                 </div>
-                <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
-                  Code review & QA approval
+                <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                  QA approval
                 </div>
               </div>
 
-              <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', borderLeft: '4px solid #10b981', boxShadow: '0 4px 16px rgba(16, 185, 129, 0.08)' }}>
+              <div className="glass-card" style={{ padding: '1rem 1.2rem', background: 'rgba(16, 24, 40, 0.75)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '14px', borderLeft: '4px solid #10b981' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#10b981' }}>🟢 Completed / Done</span>
-                  <CheckCircle2 size={16} color="#10b981" />
+                  <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#34d399' }}>🟢 Completed</span>
+                  <CheckCircle2 size={18} color="#34d399" />
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', marginTop: '0.2rem' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#34d399', marginTop: '0.3rem' }}>
                   {taskStats.verified}
                 </div>
-                <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
+                <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
                   Delivered & verified
                 </div>
               </div>
 
-              <div className="glass-card" style={{ padding: '0.85rem 1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', borderLeft: '4px solid #ef4444', boxShadow: '0 4px 16px rgba(239, 68, 68, 0.08)' }}>
+              <div className="glass-card" style={{ padding: '1rem 1.2rem', background: 'rgba(16, 24, 40, 0.75)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '14px', borderLeft: '4px solid #ef4444' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#ef4444' }}>🔴 Blocked</span>
-                  <XCircle size={16} color="#ef4444" />
+                  <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#f87171' }}>🔴 Blocked</span>
+                  <XCircle size={18} color="#f87171" />
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ef4444', marginTop: '0.2rem' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#f87171', marginTop: '0.3rem' }}>
                   {taskStats.blocked}
                 </div>
-                <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
-                  Awaiting dependencies / APIs
+                <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                  Awaiting dependencies
                 </div>
               </div>
             </div>
 
             {/* Task Filter & Search Bar */}
-            <div className="glass-card" style={{ padding: '0.7rem 1rem', marginBottom: '1rem', display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.04)' }}>
-              <div style={{ flex: '1 1 220px', position: 'relative' }}>
-                <Search size={14} color="#0284c7" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '0.8rem' }} />
+            <div className="glass-card" style={{ padding: '0.9rem 1.2rem', marginBottom: '1.2rem', display: 'flex', gap: '0.8rem', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(16, 24, 40, 0.75)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '14px' }}>
+              <div style={{ flex: '1 1 240px', position: 'relative' }}>
+                <Search size={16} color="#38bdf8" style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '0.9rem' }} />
                 <input
                   type="text"
                   placeholder="Search tasks by ID, task description, assigned engineer..."
@@ -1253,10 +1323,12 @@ export default function AdminDashboard() {
                   onChange={(e) => setTaskSearchTerm(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '0.45rem 0.8rem 0.45rem 2.2rem',
+                    padding: '0.6rem 0.9rem 0.6rem 2.5rem',
                     borderRadius: '8px',
-                    border: '1px solid rgba(0,0,0,0.12)',
-                    fontSize: '0.78rem',
+                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                    background: 'rgba(7, 10, 16, 0.75)',
+                    color: '#ffffff',
+                    fontSize: '0.92rem',
                     outline: 'none',
                     boxSizing: 'border-box'
                   }}
@@ -1267,15 +1339,15 @@ export default function AdminDashboard() {
                 value={taskStatusFilter}
                 onChange={(e) => setTaskStatusFilter(e.target.value)}
                 style={{
-                  padding: '0.45rem 0.8rem',
+                  padding: '0.55rem 1rem',
                   borderRadius: '8px',
-                  border: '1px solid rgba(2, 132, 199, 0.3)',
-                  fontSize: '0.78rem',
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                  fontSize: '0.9rem',
                   outline: 'none',
-                  background: '#f8fafc',
+                  background: 'rgba(7, 10, 16, 0.9)',
                   fontWeight: 600,
                   cursor: 'pointer',
-                  color: '#0f172a'
+                  color: '#ffffff'
                 }}
               >
                 <option value="ALL">All Statuses ({taskStats.total})</option>
@@ -1290,146 +1362,147 @@ export default function AdminDashboard() {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.35rem',
-                  padding: '0.45rem 0.85rem',
+                  gap: '0.45rem',
+                  padding: '0.55rem 1.1rem',
                   borderRadius: '8px',
-                  border: '1px solid rgba(2, 132, 199, 0.4)',
-                  background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-                  color: '#ffffff',
-                  fontSize: '0.76rem',
-                  fontWeight: 700,
+                  border: '1px solid rgba(56, 189, 248, 0.35)',
+                  background: 'linear-gradient(135deg, #00f5d4 0%, #0284c7 100%)',
+                  color: '#06080e',
+                  fontSize: '0.88rem',
+                  fontWeight: 800,
                   cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)'
+                  boxShadow: '0 2px 10px rgba(0, 245, 212, 0.25)'
                 }}
                 title="Refresh Tasks"
               >
-                <RefreshCw size={13} />
+                <RefreshCw size={15} />
                 Refresh
               </button>
             </div>
 
             {/* Tasks Table */}
-            <div className="glass-card" style={{ padding: '1.1rem', background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', overflowX: 'auto', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+            <div className="glass-card" style={{ padding: '1.2rem', background: 'rgba(16, 24, 40, 0.75)', backdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '14px', overflowX: 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
                   Tasks Roster ({filteredTasks.length})
                 </h3>
-                <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>
+                <span style={{ fontSize: '0.86rem', color: '#94a3b8', fontWeight: 600 }}>
                   Live Operational Task Management
                 </span>
               </div>
 
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
-                  <tr style={{ borderBottom: '2px solid rgba(0,0,0,0.06)', color: '#475569', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    <th style={{ padding: '0.7rem 0.8rem' }}>Task ID</th>
-                    <th style={{ padding: '0.7rem 0.8rem' }}>Task</th>
-                    <th style={{ padding: '0.7rem 0.8rem' }}>Assigned Staff</th>
-                    <th style={{ padding: '0.7rem 0.8rem' }}>Priority</th>
-                    <th style={{ padding: '0.7rem 0.8rem' }}>SLA Target</th>
-                    <th style={{ padding: '0.7rem 0.8rem' }}>Current Status</th>
-                    <th style={{ padding: '0.7rem 0.8rem', textAlign: 'right' }}>Admin Action</th>
+                  <tr style={{ borderBottom: '2px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', fontSize: '0.88rem', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 800 }}>
+                    <th style={{ padding: '0.8rem 0.85rem' }}>Task ID</th>
+                    <th style={{ padding: '0.8rem 0.85rem' }}>Task</th>
+                    <th style={{ padding: '0.8rem 0.85rem' }}>Assigned Staff</th>
+                    <th style={{ padding: '0.8rem 0.85rem' }}>Priority</th>
+                    <th style={{ padding: '0.8rem 0.85rem' }}>SLA Target</th>
+                    <th style={{ padding: '0.8rem 0.85rem' }}>Current Status</th>
+                    <th style={{ padding: '0.8rem 0.85rem', textAlign: 'right' }}>Admin Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredTasks.map((t) => (
-                    <tr key={t.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', fontSize: '0.78rem' }}>
-                      <td style={{ padding: '0.7rem 0.8rem', fontWeight: 800 }}>
-                        <span style={{ background: 'rgba(99, 102, 241, 0.12)', color: '#4338ca', padding: '0.2rem 0.55rem', borderRadius: '6px', fontSize: '0.74rem' }}>
+                    <tr key={t.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: '0.92rem' }}>
+                      <td style={{ padding: '0.8rem 0.85rem', fontWeight: 800 }}>
+                        <span style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.35)', padding: '0.3rem 0.65rem', borderRadius: '8px', fontSize: '0.88rem', fontFamily: 'monospace' }}>
                           {t.id}
                         </span>
                       </td>
-                      <td style={{ padding: '0.7rem 0.8rem', fontWeight: 700, color: '#1e293b' }}>
+                      <td style={{ padding: '0.8rem 0.85rem', fontWeight: 700, color: '#ffffff', fontSize: '1.02rem' }}>
                         {t.title}
                       </td>
-                      <td style={{ padding: '0.7rem 0.8rem' }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: 'rgba(2, 132, 199, 0.1)', color: '#0369a1', padding: '0.2rem 0.65rem', borderRadius: '14px', fontSize: '0.72rem', fontWeight: 700 }}>
+                      <td style={{ padding: '0.8rem 0.85rem' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(2, 132, 199, 0.15)', color: '#38bdf8', border: '1px solid rgba(2, 132, 199, 0.3)', padding: '0.3rem 0.75rem', borderRadius: '16px', fontSize: '0.86rem', fontWeight: 700 }}>
                           👨‍💻 {t.employee_name || t.assigned_to || 'Software Engineer'}
                         </span>
                       </td>
-                      <td style={{ padding: '0.7rem 0.8rem' }}>
+                      <td style={{ padding: '0.8rem 0.85rem' }}>
                         <span style={{
-                          fontSize: '0.68rem',
+                          fontSize: '0.82rem',
                           fontWeight: 800,
-                          padding: '0.2rem 0.55rem',
-                          borderRadius: '10px',
-                          background: t.priority === 'Urgent' ? '#fee2e2' : t.priority === 'High' ? '#fef3c7' : '#f1f5f9',
-                          color: t.priority === 'Urgent' ? '#b91c1c' : t.priority === 'High' ? '#b45309' : '#475569',
-                          border: `1px solid ${t.priority === 'Urgent' ? '#fca5a5' : t.priority === 'High' ? '#fcd34d' : '#cbd5e1'}`
+                          padding: '0.3rem 0.7rem',
+                          borderRadius: '12px',
+                          background: t.priority === 'Urgent' ? 'rgba(239, 68, 68, 0.2)' : t.priority === 'High' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(100, 116, 139, 0.2)',
+                          color: t.priority === 'Urgent' ? '#f87171' : t.priority === 'High' ? '#fbbf24' : '#cbd5e1',
+                          border: `1px solid ${t.priority === 'Urgent' ? 'rgba(239, 68, 68, 0.4)' : t.priority === 'High' ? 'rgba(245, 158, 11, 0.4)' : 'rgba(148, 163, 184, 0.3)'}`
                         }}>
                           {t.priority}
                         </span>
                       </td>
-                      <td style={{ padding: '0.7rem 0.8rem', color: '#475569', fontWeight: 700 }}>
+                      <td style={{ padding: '0.8rem 0.85rem', color: '#cbd5e1', fontWeight: 700 }}>
                         {t.time}
                       </td>
-                      <td style={{ padding: '0.7rem 0.8rem' }}>
+                      <td style={{ padding: '0.8rem 0.85rem' }}>
                         <span style={{
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '0.35rem',
-                          fontSize: '0.74rem',
+                          gap: '0.4rem',
+                          fontSize: '0.86rem',
                           fontWeight: 800,
-                          padding: '0.25rem 0.65rem',
-                          borderRadius: '12px',
+                          padding: '0.35rem 0.8rem',
+                          borderRadius: '14px',
                           background:
-                            t.status === 'Verified' ? '#dcfce7' :
-                              t.status === 'Review' ? '#f3e8ff' :
-                                t.status === 'Blocked' ? '#fee2e2' : '#e0f2fe',
+                            t.status === 'Verified' ? 'rgba(16, 185, 129, 0.18)' :
+                              t.status === 'Review' ? 'rgba(168, 85, 247, 0.18)' :
+                                t.status === 'Blocked' ? 'rgba(239, 68, 68, 0.18)' : 'rgba(56, 189, 248, 0.18)',
                           color:
-                            t.status === 'Verified' ? '#15803d' :
-                              t.status === 'Review' ? '#7e22ce' :
-                                t.status === 'Blocked' ? '#b91c1c' : '#0369a1',
-                          border: `1px solid ${t.status === 'Verified' ? '#86efac' :
-                              t.status === 'Review' ? '#d8b4fe' :
-                                t.status === 'Blocked' ? '#fca5a5' : '#7dd3fc'
+                            t.status === 'Verified' ? '#34d399' :
+                              t.status === 'Review' ? '#c084fc' :
+                                t.status === 'Blocked' ? '#f87171' : '#38bdf8',
+                          border: `1px solid ${t.status === 'Verified' ? 'rgba(16, 185, 129, 0.4)' :
+                              t.status === 'Review' ? 'rgba(168, 85, 247, 0.4)' :
+                                t.status === 'Blocked' ? 'rgba(239, 68, 68, 0.4)' : 'rgba(56, 189, 248, 0.4)'
                             }`
                         }}>
-                          {t.status === 'Verified' && <CheckCircle2 size={13} />}
-                          {t.status === 'Review' && <Layers size={13} />}
-                          {t.status === 'Blocked' && <XCircle size={13} />}
-                          {t.status === 'In Progress' && <Clock size={13} />}
+                          {t.status === 'Verified' && <CheckCircle2 size={14} />}
+                          {t.status === 'Review' && <Layers size={14} />}
+                          {t.status === 'Blocked' && <XCircle size={14} />}
+                          {t.status === 'In Progress' && <Clock size={14} />}
                           {t.status}
                         </span>
                       </td>
-                      <td style={{ padding: '0.7rem 0.8rem', textAlign: 'right' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+                      <td style={{ padding: '0.8rem 0.85rem', textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                           <select
                             value={t.status}
                             onChange={(e) => handleTaskStatusChange(t.id, e.target.value as any)}
                             style={{
-                              padding: '0.3rem 0.6rem',
+                              padding: '0.45rem 0.85rem',
                               borderRadius: '8px',
-                              fontSize: '0.72rem',
+                              fontSize: '0.86rem',
                               fontWeight: 700,
-                              background: 'rgba(16, 24, 40, 0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(56, 189, 248, 0.25)',
-                              color: '#0f172a',
+                              background: 'rgba(7, 10, 16, 0.95)',
+                              border: '1px solid rgba(56, 189, 248, 0.4)',
+                              color: '#38bdf8',
                               cursor: 'pointer',
                               outline: 'none',
-                              boxShadow: '0 1px 4px rgba(0,0,0,0.05)'
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
                             }}
                           >
-                            <option value="In Progress">Set In Progress</option>
-                            <option value="Review">Set Review</option>
-                            <option value="Verified">Set Completed</option>
-                            <option value="Blocked">Set Blocked</option>
+                            <option value="In Progress" style={{ background: '#070a10', color: '#ffffff' }}>Set In Progress</option>
+                            <option value="Review" style={{ background: '#070a10', color: '#ffffff' }}>Set Review</option>
+                            <option value="Verified" style={{ background: '#070a10', color: '#ffffff' }}>Set Completed</option>
+                            <option value="Blocked" style={{ background: '#070a10', color: '#ffffff' }}>Set Blocked</option>
                           </select>
                           <button
                             onClick={() => handleDeleteTask(t.id)}
                             title="Delete Task"
                             style={{
-                              background: 'rgba(239, 68, 68, 0.1)',
-                              border: '1px solid rgba(239, 68, 68, 0.25)',
-                              color: '#dc2626',
+                              background: 'rgba(239, 68, 68, 0.12)',
+                              border: '1px solid rgba(239, 68, 68, 0.3)',
+                              color: '#f87171',
                               cursor: 'pointer',
-                              padding: '0.3rem',
-                              borderRadius: '6px',
+                              padding: '0.45rem',
+                              borderRadius: '8px',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center'
                             }}
                           >
-                            <Trash2 size={13} />
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       </td>
@@ -1438,13 +1511,313 @@ export default function AdminDashboard() {
 
                   {filteredTasks.length === 0 && (
                     <tr>
-                      <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
+                      <td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', fontSize: '0.95rem' }}>
                         No tasks match the filter criteria.
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: DATABASE & BACKEND EXPLORER */}
+        {activeTab === "BACKEND" && (
+          <div>
+            {/* Backend Architecture & Engine Status Card */}
+            <div className="glass-card" style={{ padding: '2rem 2.2rem', marginBottom: '1.6rem', background: 'rgba(12, 16, 23, 0.85)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.6rem' }}>
+                <div>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.25rem 0.85rem', borderRadius: '20px', background: 'rgba(0, 245, 212, 0.12)', border: '1px solid rgba(0, 245, 212, 0.35)', color: '#00f5d4', fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.5rem' }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00f5d4', boxShadow: '0 0 8px #00f5d4' }} />
+                    Live SQLite Database Engine Active
+                  </div>
+                  <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
+                    Backend Infrastructure & Database Console
+                  </h2>
+                  <p style={{ color: '#94a3b8', fontSize: '0.92rem', margin: '0.35rem 0 0 0' }}>
+                    Inspect active database tables, stored rows, and serverless SQLite storage state.
+                  </p>
+                </div>
+
+                <button
+                  onClick={fetchBackendStatus}
+                  disabled={loadingBackend}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.65rem 1.3rem',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #00f5d4 0%, #0284c7 100%)',
+                    color: '#06080e',
+                    fontWeight: 800,
+                    fontSize: '0.9rem',
+                    border: 'none',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 18px rgba(0, 245, 212, 0.35)'
+                  }}
+                >
+                  <RefreshCw size={16} className={loadingBackend ? "animate-spin" : ""} />
+                  {loadingBackend ? "Syncing Engine..." : "Sync Database State"}
+                </button>
+              </div>
+
+              {/* 4 DB Metric Panels */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.2rem' }}>
+                <div style={{ background: 'rgba(7, 10, 16, 0.65)', padding: '1.2rem 1.4rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#38bdf8', fontSize: '0.82rem', fontWeight: 700 }}>
+                    <Server size={16} /> STORAGE ENGINE
+                  </div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', marginTop: '0.4rem' }}>
+                    SQLite 3 (WAL Mode)
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+                    High-concurrency LibSQL engine
+                  </div>
+                </div>
+
+                <div style={{ background: 'rgba(7, 10, 16, 0.65)', padding: '1.2rem 1.4rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#00f5d4', fontSize: '0.82rem', fontWeight: 700 }}>
+                    <HardDrive size={16} /> DB FILE LOCATION
+                  </div>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#00f5d4', marginTop: '0.4rem', fontFamily: 'monospace' }}>
+                    data/a2z.db
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+                    Size: {backendData?.database?.fileSize || "Healthy"}
+                  </div>
+                </div>
+
+                <div style={{ background: 'rgba(7, 10, 16, 0.65)', padding: '1.2rem 1.4rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#a855f7', fontSize: '0.82rem', fontWeight: 700 }}>
+                    <Database size={16} /> TOTAL DATABASE ROWS
+                  </div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#a855f7', marginTop: '0.4rem' }}>
+                    {backendData?.database?.totalRecords || (employees.length + tasks.length + events.length)} records
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+                    Across 3 core tables
+                  </div>
+                </div>
+
+                <div style={{ background: 'rgba(7, 10, 16, 0.65)', padding: '1.2rem 1.4rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#34d399', fontSize: '0.82rem', fontWeight: 700 }}>
+                    <FileCode size={16} /> API ARCHITECTURE
+                  </div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#34d399', marginTop: '0.4rem' }}>
+                    Next.js Route Handlers
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+                    REST endpoints in /src/app/api/
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Interactive Live Table Inspector */}
+            <div className="glass-card" style={{ padding: '2rem 2.2rem', marginBottom: '1.6rem', background: 'rgba(12, 16, 23, 0.85)', border: '1px solid rgba(255, 255, 255, 0.09)', borderRadius: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.4rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                    Live Table Inspector
+                  </h3>
+                  <p style={{ fontSize: '0.88rem', color: '#94a3b8', margin: '0.25rem 0 0 0' }}>
+                    Select a table to inspect live records stored in SQLite
+                  </p>
+                </div>
+
+                {/* Table selector chips */}
+                <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                  {[
+                    { id: "employees", label: `employees (${employees.length} rows)` },
+                    { id: "verification_tasks", label: `verification_tasks (${tasks.length} rows)` },
+                    { id: "company_events", label: `company_events (${events.length} rows)` }
+                  ].map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => setSelectedDbTable(t.id)}
+                      style={{
+                        padding: '0.55rem 1.15rem',
+                        borderRadius: '8px',
+                        fontSize: '0.88rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        background: selectedDbTable === t.id ? 'linear-gradient(135deg, #00f5d4 0%, #0284c7 100%)' : 'rgba(255, 255, 255, 0.05)',
+                        color: selectedDbTable === t.id ? '#06080e' : '#cbd5e1',
+                        border: selectedDbTable === t.id ? 'none' : '1px solid rgba(255, 255, 255, 0.12)'
+                      }}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Table Data Preview */}
+              <div style={{ overflowX: 'auto', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                {selectedDbTable === "employees" && (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.92rem' }}>
+                    <thead style={{ background: 'rgba(7, 10, 16, 0.9)', color: '#38bdf8', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                      <tr>
+                        <th style={{ padding: '0.85rem 1.1rem' }}>id</th>
+                        <th style={{ padding: '0.85rem 1.1rem' }}>name</th>
+                        <th style={{ padding: '0.85rem 1.1rem' }}>username</th>
+                        <th style={{ padding: '0.85rem 1.1rem' }}>role</th>
+                        <th style={{ padding: '0.85rem 1.1rem' }}>department</th>
+                        <th style={{ padding: '0.85rem 1.1rem' }}>status</th>
+                        <th style={{ padding: '0.85rem 1.1rem' }}>check_in_time</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {employees.map(emp => (
+                        <tr key={emp.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', background: 'rgba(12, 16, 23, 0.5)' }}>
+                          <td style={{ padding: '0.85rem 1.1rem', fontFamily: 'monospace', color: '#00f5d4', fontWeight: 700 }}>{emp.id}</td>
+                          <td style={{ padding: '0.85rem 1.1rem', color: '#ffffff', fontWeight: 600 }}>{emp.name}</td>
+                          <td style={{ padding: '0.85rem 1.1rem', color: '#94a3b8' }}>{emp.username}</td>
+                          <td style={{ padding: '0.85rem 1.1rem', color: '#cbd5e1' }}>{emp.role}</td>
+                          <td style={{ padding: '0.85rem 1.1rem', color: '#94a3b8' }}>{emp.department}</td>
+                          <td style={{ padding: '0.85rem 1.1rem' }}>
+                            <span style={{
+                              fontSize: '0.82rem',
+                              fontWeight: 800,
+                              padding: '0.25rem 0.65rem',
+                              borderRadius: '20px',
+                              color: emp.status === 'PRESENT' ? '#34d399' : emp.status === 'ABSENT' ? '#f87171' : '#fbbf24',
+                              background: emp.status === 'PRESENT' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'
+                            }}>
+                              {emp.status}
+                            </span>
+                          </td>
+                          <td style={{ padding: '0.85rem 1.1rem', color: '#94a3b8' }}>{emp.check_in_time || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+
+                {selectedDbTable === "verification_tasks" && (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.92rem' }}>
+                    <thead style={{ background: 'rgba(7, 10, 16, 0.9)', color: '#38bdf8', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                      <tr>
+                        <th style={{ padding: '0.85rem 1.1rem' }}>id</th>
+                        <th style={{ padding: '0.85rem 1.1rem' }}>title</th>
+                        <th style={{ padding: '0.85rem 1.1rem' }}>assigned_to</th>
+                        <th style={{ padding: '0.85rem 1.1rem' }}>priority</th>
+                        <th style={{ padding: '0.85rem 1.1rem' }}>time</th>
+                        <th style={{ padding: '0.85rem 1.1rem' }}>status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tasks.map(tsk => (
+                        <tr key={tsk.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', background: 'rgba(12, 16, 23, 0.5)' }}>
+                          <td style={{ padding: '0.85rem 1.1rem', fontFamily: 'monospace', color: '#00f5d4', fontWeight: 700 }}>{tsk.id}</td>
+                          <td style={{ padding: '0.85rem 1.1rem', color: '#ffffff', fontWeight: 600 }}>{tsk.title}</td>
+                          <td style={{ padding: '0.85rem 1.1rem', color: '#94a3b8' }}>{tsk.employee_name || tsk.assigned_to}</td>
+                          <td style={{ padding: '0.85rem 1.1rem', color: tsk.priority === 'Urgent' ? '#f87171' : '#cbd5e1' }}>{tsk.priority}</td>
+                          <td style={{ padding: '0.85rem 1.1rem', color: '#94a3b8' }}>{tsk.time}</td>
+                          <td style={{ padding: '0.85rem 1.1rem' }}>
+                            <span style={{
+                              fontSize: '0.82rem',
+                              fontWeight: 800,
+                              padding: '0.25rem 0.65rem',
+                              borderRadius: '20px',
+                              color: tsk.status === 'Verified' ? '#34d399' : tsk.status === 'Blocked' ? '#f87171' : '#38bdf8',
+                              background: 'rgba(56, 189, 248, 0.15)'
+                            }}>
+                              {tsk.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+
+                {selectedDbTable === "company_events" && (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.92rem' }}>
+                    <thead style={{ background: 'rgba(7, 10, 16, 0.9)', color: '#38bdf8', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                      <tr>
+                        <th style={{ padding: '0.85rem 1.1rem' }}>id</th>
+                        <th style={{ padding: '0.85rem 1.1rem' }}>title</th>
+                        <th style={{ padding: '0.85rem 1.1rem' }}>date</th>
+                        <th style={{ padding: '0.85rem 1.1rem' }}>type</th>
+                        <th style={{ padding: '0.85rem 1.1rem' }}>description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {events.map(ev => (
+                        <tr key={ev.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', background: 'rgba(12, 16, 23, 0.5)' }}>
+                          <td style={{ padding: '0.85rem 1.1rem', fontFamily: 'monospace', color: '#00f5d4', fontWeight: 700 }}>{ev.id}</td>
+                          <td style={{ padding: '0.85rem 1.1rem', color: '#ffffff', fontWeight: 600 }}>{ev.title}</td>
+                          <td style={{ padding: '0.85rem 1.1rem', color: '#38bdf8' }}>{ev.date}</td>
+                          <td style={{ padding: '0.85rem 1.1rem', color: '#cbd5e1' }}>{ev.type}</td>
+                          <td style={{ padding: '0.85rem 1.1rem', color: '#94a3b8' }}>{ev.description || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+
+            {/* Comprehensive Administrator Guidance Box */}
+            <div className="glass-card" style={{ padding: '2rem 2.2rem', background: 'rgba(12, 16, 23, 0.85)', border: '1px solid rgba(56, 189, 248, 0.35)', borderRadius: '18px' }}>
+              <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.4rem' }}>
+                How & Where to Handle Your Backend
+              </h3>
+              <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '1.5rem', lineHeight: 1.6 }}>
+                Your backend is fully powered by a local, zero-latency SQLite database with Write-Ahead Logging (WAL) and Next.js server route handlers. Here is how you can inspect and modify it:
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.2rem' }}>
+                {/* Method 1 */}
+                <div style={{ background: 'rgba(7, 10, 16, 0.7)', padding: '1.3rem', borderRadius: '14px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#00f5d4', fontWeight: 800, fontSize: '0.9rem', marginBottom: '0.4rem' }}>
+                    <ShieldCheck size={18} /> 1. Through This Admin Portal
+                  </div>
+                  <p style={{ fontSize: '0.8rem', color: '#cbd5e1', lineHeight: 1.6, margin: 0 }}>
+                    You can manage everything directly without writing code:
+                  </p>
+                  <ul style={{ fontSize: '0.78rem', color: '#94a3b8', paddingLeft: '1.2rem', marginTop: '0.5rem', lineHeight: 1.6 }}>
+                    <li><strong>Employees:</strong> Click <em>Employee Management</em> to create, edit, or remove staff.</li>
+                    <li><strong>Attendance:</strong> Click <em>Live Attendance Board</em> to update or monitor punch times.</li>
+                    <li><strong>Tasks:</strong> Click <em>Tasks & Status</em> to add, reassign, or update task SLAs.</li>
+                    <li><strong>Events:</strong> Click <em>Upcoming Events</em> to schedule holidays.</li>
+                  </ul>
+                </div>
+
+                {/* Method 2 */}
+                <div style={{ background: 'rgba(7, 10, 16, 0.7)', padding: '1.3rem', borderRadius: '14px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#38bdf8', fontWeight: 800, fontSize: '0.9rem', marginBottom: '0.4rem' }}>
+                    <FileCode size={18} /> 2. Database Code & REST APIs
+                  </div>
+                  <p style={{ fontSize: '0.8rem', color: '#cbd5e1', lineHeight: 1.6, margin: 0 }}>
+                    The backend code and database files reside in your project directory:
+                  </p>
+                  <ul style={{ fontSize: '0.78rem', color: '#94a3b8', paddingLeft: '1.2rem', marginTop: '0.5rem', lineHeight: 1.6 }}>
+                    <li><strong>Database File:</strong> <code style={{ color: '#00f5d4' }}>data/a2z.db</code></li>
+                    <li><strong>Database Methods:</strong> <code style={{ color: '#38bdf8' }}>src/lib/db.ts</code></li>
+                    <li><strong>Server APIs:</strong> <code style={{ color: '#a855f7' }}>src/app/api/employees</code>, <code style={{ color: '#a855f7' }}>src/app/api/tasks</code>, <code style={{ color: '#a855f7' }}>src/app/api/events</code></li>
+                  </ul>
+                </div>
+
+                {/* Method 3 */}
+                <div style={{ background: 'rgba(7, 10, 16, 0.7)', padding: '1.3rem', borderRadius: '14px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#a855f7', fontWeight: 800, fontSize: '0.9rem', marginBottom: '0.4rem' }}>
+                    <HardDrive size={18} /> 3. Direct GUI Database Tools
+                  </div>
+                  <p style={{ fontSize: '0.8rem', color: '#cbd5e1', lineHeight: 1.6, margin: 0 }}>
+                    If you want to view or edit the raw SQLite database outside the browser:
+                  </p>
+                  <ul style={{ fontSize: '0.78rem', color: '#94a3b8', paddingLeft: '1.2rem', marginTop: '0.5rem', lineHeight: 1.6 }}>
+                    <li>Install <strong>DB Browser for SQLite</strong> (free, open-source).</li>
+                    <li>Open the file at <code style={{ color: '#00f5d4' }}>data/a2z.db</code>.</li>
+                    <li>Or use the <strong>VS Code SQLite Viewer</strong> extension to query rows directly in the editor!</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         )}

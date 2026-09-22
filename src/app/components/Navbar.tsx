@@ -1,31 +1,32 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { User } from "lucide-react";
+import { User, Menu, X, ArrowUpRight } from "lucide-react";
 import Logo from "./Logo";
 
 export default function Navbar() {
   const [visible, setVisible] = useState(true);
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const lastScrollY = useRef(0);
 
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
 
-      if (currentScrollY > 40) {
+      if (currentScrollY > 30) {
         setScrolled(true);
       } else {
         setScrolled(false);
       }
 
-      // Hide when scrolling down, show when scrolling up
-      if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
-        setVisible(false); // scrolling down
+      // Hide when scrolling fast down, show when scrolling up
+      if (currentScrollY > lastScrollY.current && currentScrollY > 120) {
+        setVisible(false);
       } else {
-        setVisible(true);  // scrolling up
+        setVisible(true);
       }
 
       lastScrollY.current = currentScrollY;
@@ -34,6 +35,14 @@ export default function Navbar() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const navLinks = [
+    { href: "#home", label: "Home" },
+    { href: "#about", label: "About Us" },
+    { href: "#services", label: "Services" },
+    { href: "#product", label: "Product" },
+    { href: "#contact", label: "Contact" }
+  ];
 
   return (
     <motion.header
@@ -45,11 +54,11 @@ export default function Navbar() {
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       style={{
         position: 'fixed',
-        top: '1.2rem',
+        top: '1rem',
         left: 0,
         right: 0,
         margin: '0 auto',
-        maxWidth: '1020px',
+        maxWidth: '1180px',
         width: 'calc(100% - 2rem)',
         zIndex: 9999,
         pointerEvents: 'none'
@@ -61,54 +70,55 @@ export default function Navbar() {
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '0.65rem 1.6rem',
-          borderRadius: '9999px', // Cylindrical / Capsule shape!
+          borderRadius: '9999px',
           background: scrolled 
-            ? 'rgba(15, 23, 42, 0.65)' 
-            : 'rgba(255, 255, 255, 0.12)', // Fully transparent glassmorphism
-          backdropFilter: 'blur(20px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-          border: '1px solid rgba(255, 255, 255, 0.25)',
+            ? 'rgba(9, 13, 22, 0.82)' 
+            : 'rgba(15, 23, 42, 0.55)',
+          backdropFilter: 'blur(24px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
           boxShadow: scrolled 
-            ? '0 12px 35px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15)' 
-            : '0 8px 30px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
+            ? '0 15px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.15)' 
+            : '0 8px 30px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
           transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
           pointerEvents: 'auto'
         }}
       >
-        <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+        {/* Brand Logo */}
+        <Link href="#home" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
           <Logo size="sm" showTagline={false} />
         </Link>
 
+        {/* Desktop Navigation Links */}
         <ul style={{
           display: 'flex',
-          gap: '2rem',
+          gap: '1.8rem',
           listStyle: 'none',
           margin: 0,
           padding: 0,
           alignItems: 'center'
-        }}>
-          {[
-            { href: "/#home", label: "Home" },
-            { href: "/#about", label: "About" },
-            { href: "/#services", label: "Services" },
-            { href: "/#portfolio", label: "Case Studies" },
-            { href: "/#contact", label: "Contact" }
-          ].map(item => (
+        }} className="desktop-nav">
+          {navLinks.map((item) => (
             <li key={item.label}>
               <a 
                 href={item.href}
                 style={{
                   textDecoration: 'none',
-                  color: '#ffffff',
+                  color: '#e2e8f0',
                   fontWeight: 600,
-                  fontSize: '0.85rem',
+                  fontSize: '0.95rem',
                   letterSpacing: '0.3px',
-                  textShadow: '0 2px 8px rgba(0,0,0,0.6)',
-                  transition: 'color 0.2s ease',
-                  padding: '0.3rem 0.5rem'
+                  transition: 'all 0.2s ease',
+                  padding: '0.35rem 0.6rem',
+                  borderRadius: '6px',
+                  position: 'relative'
                 }}
-                onMouseEnter={e => e.currentTarget.style.color = '#38bdf8'}
-                onMouseLeave={e => e.currentTarget.style.color = '#ffffff'}
+                onMouseEnter={e => {
+                  e.currentTarget.style.color = '#38bdf8';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.color = '#e2e8f0';
+                }}
               >
                 {item.label}
               </a>
@@ -116,32 +126,106 @@ export default function Navbar() {
           ))}
         </ul>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        {/* Action Button: Enterprise Portal Login */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <Link href="/login" style={{ textDecoration: 'none' }}>
-            <button 
+            <motion.button 
+              whileHover={{ scale: 1.04, boxShadow: '0 0 25px rgba(56, 189, 248, 0.45)' }}
+              whileTap={{ scale: 0.97 }}
               style={{ 
-                padding: '0.5rem 1.4rem', 
-                fontSize: '0.84rem', 
+                padding: '0.52rem 1.35rem', 
+                fontSize: '0.88rem', 
                 fontWeight: 700,
                 display: 'inline-flex', 
                 alignItems: 'center', 
                 gap: '0.45rem',
                 borderRadius: '9999px',
-                background: 'linear-gradient(135deg, var(--lilac-dark, #7A5B9C), #38bdf8)',
-                color: '#ffffff',
-                border: '1px solid rgba(255,255,255,0.3)',
-                boxShadow: '0 4px 15px rgba(56, 189, 248, 0.35)',
+                background: 'linear-gradient(135deg, #0284c7 0%, #00f5d4 100%)',
+                color: '#06080e',
+                border: 'none',
+                boxShadow: '0 4px 18px rgba(0, 245, 212, 0.3)',
                 cursor: 'pointer',
-                transition: 'all 0.25s'
+                letterSpacing: '0.2px'
               }}
-              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
-              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
             >
-              <User size={15} /> Portal Login
-            </button>
+              <User size={14} strokeWidth={2.5} /> Portal Login
+            </motion.button>
           </Link>
+
+          {/* Mobile hamburger toggle */}
+          <button 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="mobile-toggle"
+            aria-label="Toggle menu"
+            style={{
+              display: 'none',
+              background: 'transparent',
+              border: 'none',
+              color: '#ffffff',
+              cursor: 'pointer',
+              padding: '0.25rem'
+            }}
+          >
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
       </nav>
+
+      {/* Mobile Drawer */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            style={{
+              marginTop: '0.5rem',
+              background: 'rgba(9, 13, 22, 0.95)',
+              backdropFilter: 'blur(24px)',
+              borderRadius: '20px',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              padding: '1.2rem',
+              pointerEvents: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.8rem'
+            }}
+          >
+            {navLinks.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+                style={{
+                  textDecoration: 'none',
+                  color: '#f8fafc',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  padding: '0.5rem 0.8rem',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}
+              >
+                {item.label}
+                <ArrowUpRight size={16} color="#38bdf8" />
+              </a>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .desktop-nav {
+            display: none !important;
+          }
+          .mobile-toggle {
+            display: block !important;
+          }
+        }
+      `}</style>
     </motion.header>
   );
 }

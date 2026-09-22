@@ -1,177 +1,256 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, ShieldCheck, Zap, Globe, Cpu, Layers } from "lucide-react";
 
 export default function About() {
+  const pillars = [
+    {
+      icon: CloudIcon,
+      title: "Cloud Agility & Scalability",
+      desc: "Architected on modern cloud infrastructure with automated elasticity, zero-downtime CI/CD, and multi-region deployment."
+    },
+    {
+      icon: Zap,
+      title: "High-Throughput Engineering",
+      desc: "Sub-second database transactions, optimized Next.js server-side rendering, and low-latency microservices."
+    },
+    {
+      icon: ShieldCheck,
+      title: "Zero-Trust Security Architecture",
+      desc: "Rigorous encryption at rest and in transit, multi-factor authentication, granular RBAC, and SOC 2 readiness."
+    },
+    {
+      icon: Globe,
+      title: "Global Delivery Excellence",
+      desc: "Agile 2-week development sprints, transparent engineering velocity, and enterprise-grade SLA backing."
+    }
+  ];
+
   return (
-    <section id="about" className="section" style={{ background: 'transparent' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <section id="about" className="section" style={{ background: 'transparent', padding: '6rem 1.5rem' }}>
+      <div style={{ maxWidth: '1180px', margin: '0 auto' }}>
         
-        {/* Headings positioned above the columns */}
-        <div style={{ marginBottom: '2.5rem', textAlign: 'center' }}>
-          <div style={{ display: 'inline-block', padding: '0.4rem 1.3rem', backgroundColor: 'rgba(16, 24, 40, 0.75)', border: '1px solid rgba(56, 189, 248, 0.4)', borderRadius: '50px', color: '#38bdf8', fontWeight: 800, marginBottom: '1.2rem', fontSize: '0.8rem', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
-            WHO WE ARE // ABOUT A2Z
-          </div>
-          <h2 style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.7rem)', fontWeight: 800, color: '#ffffff', lineHeight: 1.2, letterSpacing: '-0.02em' }}>
-            The Leading Web & App Solutions Company & <br />
-            <span className="text-gradient">Your Partner for Digital Innovation</span>
-          </h2>
+        {/* Section Header */}
+        <div style={{ marginBottom: '3.5rem', textAlign: 'center' }}>
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '0.5rem',
+              padding: '0.4rem 1.3rem', 
+              backgroundColor: 'rgba(12, 16, 23, 0.85)', 
+              border: '1px solid rgba(56, 189, 248, 0.35)', 
+              borderRadius: '50px', 
+              color: '#38bdf8', 
+              fontWeight: 800, 
+              marginBottom: '1rem', 
+              fontSize: '0.82rem', 
+              letterSpacing: '1.8px', 
+              textTransform: 'uppercase' 
+            }}
+          >
+            <Cpu size={15} color="#38bdf8" /> Who We Are &bull; Digital Transformation
+          </motion.div>
+
+          <motion.h2 
+            style={{ 
+              fontSize: 'clamp(2.25rem, 4.2vw, 3.4rem)', 
+              fontWeight: 800, 
+              color: '#ffffff', 
+              lineHeight: 1.2, 
+              letterSpacing: '-0.025em' 
+            }}
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            Pioneering Enterprise Software & <br />
+            <span className="text-gradient">Next-Gen Digital Infrastructure</span>
+          </motion.h2>
+
+          <motion.p
+            style={{ maxWidth: '750px', margin: '0.8rem auto 0 auto', color: '#94a3b8', fontSize: '1.12rem', lineHeight: 1.75 }}
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            A2Z Software Solutions is an elite technology engineering agency. We bridge the gap between ambitious business vision and bulletproof digital reality through modern architecture, full-stack precision, and automated operations.
+          </motion.p>
         </div>
 
-        {/* Compact Two-Card Grid (Same Size, Reduced Width) */}
-        <div style={{ maxWidth: '820px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.4rem', alignItems: 'stretch' }}>
+        {/* 2-Column Content Showcase */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '2rem', alignItems: 'stretch', marginBottom: '3.5rem' }}>
           
-          {/* Left Column: High-Tech Photorealistic Team Image (Reduced Width) */}
-          <motion.div 
-            style={{ 
-              position: 'relative', 
-              borderRadius: '16px', 
-              overflow: 'hidden', 
-              border: '1px solid rgba(56, 189, 248, 0.35)',
-              boxShadow: '0 16px 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(56, 189, 248, 0.12)',
-              minHeight: '340px',
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'flex-end',
-              boxSizing: 'border-box'
-            }}
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.7, ease: "easeOut" }}
-          >
-            <img 
-              src="/about-team.jpg" 
-              alt="A2Z Software Engineering Team" 
-              style={{ 
-                position: 'absolute',
-                inset: 0,
-                width: '100%', 
-                height: '100%', 
-                objectFit: 'cover',
-                objectPosition: 'center center',
-                display: 'block', 
-                filter: 'brightness(0.95) contrast(1.1)'
-              }} 
-            />
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(7,10,16,0.92) 0%, rgba(7,10,16,0.2) 50%, transparent 100%)' }} />
-            
-            {/* Compact Floating Stat Badge */}
-            <motion.div 
-              animate={{ y: [-2, 2, -2] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              style={{
-                position: 'relative',
-                zIndex: 2,
-                margin: '0.85rem',
-                background: 'rgba(16, 24, 40, 0.92)',
-                backdropFilter: 'blur(16px)',
-                border: '1px solid rgba(0, 245, 212, 0.4)',
-                borderRadius: '10px',
-                padding: '0.65rem 0.9rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '0.7rem',
-                boxShadow: '0 8px 20px rgba(0,0,0,0.5)'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00f5d4', display: 'inline-block', boxShadow: '0 0 8px #00f5d4' }} />
-                <div>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#ffffff' }}>100+ Enterprise Products Shipped</div>
-                  <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>Web, Mobile & Cloud Systems</div>
-                </div>
-              </div>
-              <div style={{ fontSize: '0.98rem', fontWeight: 900, color: '#00f5d4' }}>99.8%</div>
-            </motion.div>
-          </motion.div>
-        
-          {/* Right Column: Why Choose Us & Advantages (Reduced Width) */}
+          {/* Left Column: Visual Card with Live Operational Stat */}
           <motion.div 
             className="glass-card"
             style={{ 
-              padding: '1.5rem 1.7rem', 
-              borderRadius: '16px',
-              border: '1px solid rgba(56, 189, 248, 0.35)',
-              boxShadow: '0 16px 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(56, 189, 248, 0.12)',
-              position: 'relative',
-              height: '100%',
+              position: 'relative', 
+              borderRadius: '20px', 
+              overflow: 'hidden', 
+              border: '1px solid rgba(56, 189, 248, 0.25)',
+              minHeight: '380px',
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'center',
-              boxSizing: 'border-box'
+              justifyContent: 'space-between',
+              padding: '2.4rem'
             }}
-            initial={{ opacity: 0, x: 30 }}
+            initial={{ opacity: 0, x: -25 }}
             whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.7, delay: 0.15, ease: "easeOut" }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
           >
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.65rem', color: '#ffffff' }}>
-              Why Global Businesses Choose A2Z
-            </h3>
-            <p style={{ color: '#cbd5e1', fontSize: '0.84rem', lineHeight: 1.55, marginBottom: '1rem' }}>
-              From architectural strategy to production deployment, we engineer bespoke digital products that accelerate business growth and scale reliably.
-            </p>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {[
-                { title: "Complete End-to-End Solutions", desc: "Full-stack development, mobile apps, database schemas, and DevOps." },
-                { title: "Cutting-Edge Tech Stack", desc: "Next.js Turbopack, React Native, TypeScript, Tailwind, and AWS cloud." },
-                { title: "Rapid Agile Delivery", desc: "Fast-paced bi-weekly sprints with transparent milestones." },
-                { title: "Enterprise-Grade Reliability", desc: "99.9% uptime SLAs, SOC-2 security, and automated CI/CD." }
-              ].map((item, i) => (
-                <motion.div 
-                  key={i} 
-                  whileHover={{ x: 4 }}
-                  transition={{ duration: 0.2 }}
-                  style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem', cursor: 'pointer' }}
-                >
-                  <CheckCircle2 size={16} color="#00f5d4" style={{ flexShrink: 0, marginTop: '2px' }} />
-                  <div>
-                    <span style={{ fontSize: '0.85rem', color: '#ffffff', fontWeight: 700, display: 'block', marginBottom: '0.1rem' }}>{item.title}</span>
-                    <span style={{ fontSize: '0.76rem', color: '#94a3b8', lineHeight: 1.4 }}>{item.desc}</span>
-                  </div>
-                </motion.div>
-              ))}
+            <div style={{ position: 'relative', zIndex: 2 }}>
+              <div style={{ 
+                display: 'inline-block', 
+                padding: '0.35rem 0.9rem', 
+                background: 'rgba(0, 245, 212, 0.12)', 
+                border: '1px solid rgba(0, 245, 212, 0.35)', 
+                borderRadius: '20px', 
+                color: '#00f5d4', 
+                fontSize: '0.78rem', 
+                fontWeight: 800, 
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                marginBottom: '1rem'
+              }}>
+                Engineering Discipline
+              </div>
+              <h3 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.3, marginBottom: '1rem' }}>
+                Built for Scale. <br />Engineered for Reliability.
+              </h3>
+              <p style={{ color: '#cbd5e1', fontSize: '0.98rem', lineHeight: 1.7 }}>
+                Our cross-functional teams engineer end-to-end applications designed to withstand demanding enterprise loads, safeguard critical operations, and deliver seamless digital experiences.
+              </p>
+            </div>
+
+            {/* Metric Strip in Left Card */}
+            <div style={{ 
+              position: 'relative', 
+              zIndex: 2, 
+              marginTop: '2rem',
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(2, 1fr)', 
+              gap: '1rem',
+              paddingTop: '1.5rem',
+              borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+            }}>
+              <div>
+                <div style={{ fontSize: '2rem', fontWeight: 900, color: '#00f5d4', lineHeight: 1 }}>
+                  100+
+                </div>
+                <div style={{ fontSize: '0.82rem', color: '#94a3b8', marginTop: '0.35rem', fontWeight: 600 }}>
+                  Shipped Software Releases
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '2rem', fontWeight: 900, color: '#38bdf8', lineHeight: 1 }}>
+                  99.98%
+                </div>
+                <div style={{ fontSize: '0.82rem', color: '#94a3b8', marginTop: '0.35rem', fontWeight: 600 }}>
+                  Deployment Accuracy
+                </div>
+              </div>
             </div>
           </motion.div>
+        
+          {/* Right Column: 4 Strategic Enterprise Pillars */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
+            {pillars.map((pillar, idx) => {
+              const Icon = pillar.icon;
+              return (
+                <motion.div
+                  key={idx}
+                  className="glass-card"
+                  initial={{ opacity: 0, x: 25 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: idx * 0.1 }}
+                  style={{
+                    padding: '1.45rem 1.6rem',
+                    borderRadius: '16px',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '1.2rem',
+                    border: '1px solid rgba(255, 255, 255, 0.08)'
+                  }}
+                >
+                  <div style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '12px',
+                    background: 'rgba(56, 189, 248, 0.12)',
+                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <Icon size={22} color="#38bdf8" />
+                  </div>
+                  <div>
+                    <h4 style={{ fontSize: '1.14rem', fontWeight: 700, color: '#ffffff', marginBottom: '0.35rem' }}>
+                      {pillar.title}
+                    </h4>
+                    <p style={{ fontSize: '0.92rem', color: '#94a3b8', lineHeight: 1.6, margin: 0 }}>
+                      {pillar.desc}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
+
+        {/* Mission & Vision Enterprise Banner */}
+        <motion.div
+          className="glass-card"
+          style={{ 
+            padding: '2.8rem 3.2rem', 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+            gap: '2.5rem', 
+            borderRadius: '20px',
+            border: '1px solid rgba(56, 189, 248, 0.2)'
+          }}
+          initial={{ opacity: 0, y: 25 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.6rem' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00f5d4' }} />
+              <h3 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>Our Enterprise Mission</h3>
+            </div>
+            <p style={{ fontSize: '0.98rem', lineHeight: '1.75', color: '#94a3b8', margin: 0 }}>
+              To engineer mission-critical digital systems and bespoke software architectures that accelerate organizational speed, protect business integrity, and deliver sustainable competitive advantage.
+            </p>
+          </div>
+
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.6rem' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#38bdf8' }} />
+              <h3 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>Our Technological Vision</h3>
+            </div>
+            <p style={{ fontSize: '0.98rem', lineHeight: '1.75', color: '#94a3b8', margin: 0 }}>
+              To stand at the forefront of cloud-native development, algorithmic workflow automation, and verification technology — recognized for engineering perfection and uninterrupted business continuity.
+            </p>
+          </div>
+        </motion.div>
 
       </div>
-
-      {/* Centered Mission and Vision Card with Dynamic Hover */}
-      <motion.div
-        className="glass-card"
-        style={{ maxWidth: '1000px', margin: '5rem auto 0 auto', padding: '3rem 3.5rem', display: 'flex', gap: '3.5rem', flexWrap: 'wrap', textAlign: 'center', cursor: 'default' }}
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        whileHover={{ 
-          y: -4, 
-          borderColor: 'rgba(56, 189, 248, 0.35)',
-          boxShadow: '0 25px 50px rgba(0, 0, 0, 0.6), 0 0 25px rgba(56, 189, 248, 0.15)'
-        }}
-        viewport={{ once: true, margin: "-50px" }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-      >
-        <div style={{ flex: '1 1 300px' }}>
-          <h3 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '0.8rem', color: '#ffffff' }}>Our Mission</h3>
-          <p style={{ fontSize: '1rem', lineHeight: '1.8', color: '#94a3b8' }}>
-            To empower forward-thinking businesses with scalable, high-performance web and mobile software that streamlines operations, elevates user experiences, and maximizes ROI.
-          </p>
-        </div>
-        
-        <div style={{ width: '1px', background: 'rgba(255,255,255,0.12)', display: 'block' }}></div>
-
-        <div style={{ flex: '1 1 300px' }}>
-          <h3 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-primary)' }}>Our Vision</h3>
-          <p style={{ fontSize: '1.05rem', lineHeight: '1.8', color: 'var(--text-secondary)' }}>
-            To be a trusted global software partner recognized for excellence, innovation, and trust – delivering value and transforming businesses across the globe.
-          </p>
-        </div>
-      </motion.div>
     </section>
   );
+}
+
+function CloudIcon(props: { size?: number; color?: string }) {
+  return <Layers size={props.size || 20} color={props.color || "#38bdf8"} />;
 }
