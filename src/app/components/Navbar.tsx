@@ -128,7 +128,7 @@ export default function Navbar() {
 
         {/* Action Button: Enterprise Portal Login */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <Link href="/login" style={{ textDecoration: 'none' }}>
+          <Link href="/login" className="desktop-portal-btn" style={{ textDecoration: 'none' }}>
             <motion.button 
               whileHover={{ scale: 1.04, boxShadow: '0 0 25px rgba(56, 189, 248, 0.45)' }}
               whileTap={{ scale: 0.97 }}
@@ -163,10 +163,10 @@ export default function Navbar() {
               border: 'none',
               color: '#ffffff',
               cursor: 'pointer',
-              padding: '0.25rem'
+              padding: '0.35rem'
             }}
           >
-            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </nav>
@@ -180,7 +180,7 @@ export default function Navbar() {
             exit={{ opacity: 0, y: -10 }}
             style={{
               marginTop: '0.5rem',
-              background: 'rgba(9, 13, 22, 0.95)',
+              background: 'rgba(9, 13, 22, 0.96)',
               backdropFilter: 'blur(24px)',
               borderRadius: '20px',
               border: '1px solid rgba(255, 255, 255, 0.15)',
@@ -188,7 +188,8 @@ export default function Navbar() {
               pointerEvents: 'auto',
               display: 'flex',
               flexDirection: 'column',
-              gap: '0.8rem'
+              gap: '0.7rem',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.6)'
             }}
           >
             {navLinks.map((item) => (
@@ -201,17 +202,57 @@ export default function Navbar() {
                   color: '#f8fafc',
                   fontSize: '1rem',
                   fontWeight: 600,
-                  padding: '0.5rem 0.8rem',
+                  padding: '0.6rem 0.8rem',
                   borderRadius: '8px',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'space-between'
+                  justifyContent: 'space-between',
+                  transition: 'background 0.2s ease'
                 }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
                 {item.label}
                 <ArrowUpRight size={16} color="#38bdf8" />
               </a>
             ))}
+
+            {/* Subtle separator */}
+            <div style={{
+              height: '1px',
+              background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent)',
+              margin: '0.3rem 0'
+            }} />
+
+            {/* Mobile Navigation Drawer Action Button */}
+            <Link 
+              href="/login" 
+              onClick={() => setMobileMenuOpen(false)}
+              style={{ textDecoration: 'none', width: '100%', marginTop: '0.2rem' }}
+            >
+              <motion.button 
+                whileTap={{ scale: 0.97 }}
+                style={{ 
+                  width: '100%',
+                  padding: '0.75rem 1.2rem', 
+                  fontSize: '0.95rem', 
+                  fontWeight: 700,
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  gap: '0.55rem',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #0284c7 0%, #00f5d4 100%)',
+                  color: '#06080e',
+                  border: 'none',
+                  boxShadow: '0 4px 18px rgba(0, 245, 212, 0.35)',
+                  cursor: 'pointer',
+                  letterSpacing: '0.2px'
+                }}
+              >
+                <User size={16} strokeWidth={2.5} /> Employee Portal Login
+              </motion.button>
+            </Link>
           </motion.div>
         )}
       </AnimatePresence>
@@ -221,8 +262,11 @@ export default function Navbar() {
           .desktop-nav {
             display: none !important;
           }
+          .desktop-portal-btn {
+            display: none !important;
+          }
           .mobile-toggle {
-            display: block !important;
+            display: flex !important;
           }
         }
       `}</style>
