@@ -7,8 +7,8 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status') || 'ALL';
     const search = searchParams.get('search') || '';
 
-    const employees = db.getEmployees({ status, search });
-    const stats = db.getAttendanceStats();
+    const employees = await db.getEmployees({ status, search });
+    const stats = await db.getAttendanceStats();
 
     return NextResponse.json({
       employees,
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
     // Check if user already exists with same Employee ID
     if (id && id.trim()) {
-      const existingById = db.getEmployeeById(id.trim());
+      const existingById = await db.getEmployeeById(id.trim());
       if (existingById) {
         return NextResponse.json(
           { error: 'User already exists with this employee ID.' },
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
 
     // Check if user already exists with same Email
     if (email && email.trim()) {
-      const existingByEmail = db.getEmployeeByEmail(email.trim());
+      const existingByEmail = await db.getEmployeeByEmail(email.trim());
       if (existingByEmail) {
         return NextResponse.json(
           { error: 'User already exists with this email address.' },
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if user already exists with same Username
-    const existing = db.getEmployeeByUsername(username);
+    const existing = await db.getEmployeeByUsername(username);
     if (existing) {
       return NextResponse.json(
         { error: `User already exists with username "${username}".` },
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const newEmp = db.createEmployee({
+    const newEmp = await db.createEmployee({
       id: id?.trim(),
       name: name.trim(),
       username: username.trim().toLowerCase(),
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       status: status || 'PRESENT',
     });
 
-    const stats = db.getAttendanceStats();
+    const stats = await db.getAttendanceStats();
 
     return NextResponse.json({ employee: newEmp, stats }, { status: 201 });
   } catch (error: unknown) {
@@ -93,12 +93,12 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Employee ID is required.' }, { status: 400 });
     }
 
-    const updated = db.updateEmployee(id, updates);
+    const updated = await db.updateEmployee(id, updates);
     if (!updated) {
       return NextResponse.json({ error: 'Employee not found.' }, { status: 404 });
     }
 
-    const stats = db.getAttendanceStats();
+    const stats = await db.getAttendanceStats();
     return NextResponse.json({ employee: updated, stats });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to update employee';
@@ -119,12 +119,12 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Primary Administrator cannot be deleted.' }, { status: 403 });
     }
 
-    const success = db.deleteEmployee(id);
+    const success = await db.deleteEmployee(id);
     if (!success) {
       return NextResponse.json({ error: 'Employee could not be deleted or not found.' }, { status: 404 });
     }
 
-    const stats = db.getAttendanceStats();
+    const stats = await db.getAttendanceStats();
     return NextResponse.json({ success: true, stats });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to delete employee';

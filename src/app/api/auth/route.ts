@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const employee = db.getEmployeeByUsername(username.trim());
+    const employee = await db.getEmployeeByUsername(username.trim());
 
     if (!employee || employee.password !== password) {
       return NextResponse.json(

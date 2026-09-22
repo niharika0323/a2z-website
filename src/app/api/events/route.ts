@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 
 export async function GET() {
   try {
-    const events = db.getEvents();
+    const events = await db.getEvents();
     return NextResponse.json({ events });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to fetch events';
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const event = db.createEvent({
+    const event = await db.createEvent({
       title: title.trim(),
       date: date.trim(),
       type: type.trim(),
@@ -46,7 +46,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Event ID is required.' }, { status: 400 });
     }
 
-    const success = db.deleteEvent(id);
+    const success = await db.deleteEvent(id);
     if (!success) {
       return NextResponse.json({ error: 'Event could not be deleted or not found.' }, { status: 404 });
     }

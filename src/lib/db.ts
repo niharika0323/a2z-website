@@ -1,262 +1,6 @@
-import { DatabaseSync } from 'node:sqlite';
+import { createClient, Client } from '@libsql/client';
 import path from 'node:path';
 import fs from 'node:fs';
-import os from 'node:os';
-
-function getDatabasePath(): string {
-  // Check if running on Netlify, AWS Lambda, or other serverless host
-  const isServerless = Boolean(
-    process.env.NETLIFY || 
-    process.env.AWS_LAMBDA_FUNCTION_NAME || 
-    process.env.VERCEL
-  );
-
-  if (isServerless) {
-    const tmpDir = os.tmpdir();
-    const tmpPath = path.join(tmpDir, 'a2z.db');
-    
-    // Copy bundled seed database to /tmp if it doesn't exist yet
-    if (!fs.existsSync(tmpPath)) {
-      const bundledPath = path.join(process.cwd(), 'data', 'a2z.db');
-      if (fs.existsSync(bundledPath)) {
-        try {
-          fs.copyFileSync(bundledPath, tmpPath);
-        } catch (e) {
-          console.warn('Could not copy bundled database to /tmp, will initialize fresh', e);
-        }
-      }
-    }
-    return tmpPath;
-  }
-
-  // Local development
-  const dataDir = path.join(process.cwd(), 'data');
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
-  return path.join(dataDir, 'a2z.db');
-}
-
-// Global singleton to prevent connection leaks across Next.js reloads
-declare global {
-  // eslint-disable-next-line no-var
-  var __a2z_db: DatabaseSync | undefined;
-}
-
-function getDatabase(): DatabaseSync {
-  if (!global.__a2z_db) {
-    const dbPath = getDatabasePath();
-    const db = new DatabaseSync(dbPath);
-    // Performance and integrity tuning
-    try {
-      db.exec('PRAGMA journal_mode = WAL;');
-      db.exec('PRAGMA foreign_keys = ON;');
-    } catch (e) {
-      console.warn('PRAGMA tuning warning:', e);
-    }
-    initializeSchema(db);
-    global.__a2z_db = db;
-  }
-  return global.__a2z_db;
-}
-
-function initializeSchema(db: DatabaseSync) {
-  // SINGLE table for all employee details (admin & regular employees)
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS employees (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      username TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      role TEXT NOT NULL,
-      department TEXT NOT NULL,
-      email TEXT NOT NULL,
-      phone TEXT DEFAULT '',
-      status TEXT DEFAULT 'PRESENT',
-      check_in_time TEXT DEFAULT '',
-      check_out_time TEXT DEFAULT '',
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
-
-  // Table for company events & calendar
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS company_events (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      date TEXT NOT NULL,
-      type TEXT NOT NULL,
-      description TEXT DEFAULT '',
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
-
-  // Table for verification tasks & statuses
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS verification_tasks (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      assigned_to TEXT DEFAULT '',
-      employee_name TEXT DEFAULT '',
-      priority TEXT DEFAULT 'Normal',
-      time TEXT DEFAULT 'SLA: 4h',
-      status TEXT DEFAULT 'In Progress',
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
-
-  // Auto-seed Admin if not present
-  const adminCheck = db.prepare('SELECT id FROM employees WHERE username = ?').get('admin');
-  if (!adminCheck) {
-    const insertAdmin = db.prepare(`
-      INSERT INTO employees (id, name, username, password, role, department, email, phone, status, check_in_time)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    insertAdmin.run(
-      'ADM-001',
-      'System Administrator',
-      'admin',
-      'admin',
-      'ADMIN',
-      'Executive Management',
-      'admin@a2z.com',
-      '+91 90158 21469',
-      'PRESENT',
-      '08:30 AM'
-    );
-  }
-
-  // Pre-seed initial employees to showcase realistic attendance counters
-  const employeeCountRow = db.prepare('SELECT COUNT(*) as count FROM employees').get() as { count: number };
-  if (employeeCountRow.count <= 1) {
-    const insertEmp = db.prepare(`
-      INSERT OR IGNORE INTO employees (id, name, username, password, role, department, email, phone, status, check_in_time)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    insertEmp.run(
-      'EMP-101',
-      'Alok Kumar',
-      'alok',
-      'password123',
-      'Senior BGV Verification Engineer',
-      'Engineering & Core Tech',
-      'alok@a2z.com',
-      '+91 98765 43210',
-      'PRESENT',
-      '09:12 AM'
-    );
-
-    insertEmp.run(
-      'EMP-102',
-      'Niharika Singh',
-      'niharika',
-      'password123',
-      'BGV Product Manager',
-      'Product & Verification Strategy',
-      'niharika@a2z.com',
-      '+91 98765 43211',
-      'PRESENT',
-      '09:28 AM'
-    );
-
-    insertEmp.run(
-      'EMP-103',
-      'Rahul Verma',
-      'rahul',
-      'password123',
-      'Lead Forensic BGV Checker',
-      'Quality & Checker Operations',
-      'rahul.v@a2z.com',
-      '+91 98765 43212',
-      'ABSENT',
-      ''
-    );
-
-    insertEmp.run(
-      'EMP-104',
-      'Priya Sharma',
-      'priya',
-      'password123',
-      'Compliance & Legal Risk Specialist',
-      'Legal & Compliance',
-      'priya.s@a2z.com',
-      '+91 98765 43213',
-      'ON_LEAVE',
-      ''
-    );
-
-    insertEmp.run(
-      'EMP-105',
-      'Amit Patel',
-      'amit',
-      'password123',
-      'Distributed Systems Architect',
-      'Engineering & Core Tech',
-      'amit.p@a2z.com',
-      '+91 98765 43214',
-      'PRESENT',
-      '09:05 AM'
-    );
-  }
-
-  // Pre-seed company events if empty
-  const eventsCountRow = db.prepare('SELECT COUNT(*) as count FROM company_events').get() as { count: number };
-  if (eventsCountRow.count === 0) {
-    const insertEvent = db.prepare(`
-      INSERT INTO company_events (id, title, date, type, description)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-
-    insertEvent.run('EVT-101', 'Gandhi Jayanti', '2026-10-02', 'Holiday', 'National Holiday - Corporate offices closed');
-    insertEvent.run('EVT-102', 'Q3 Cloud Architecture & Security Audit', '2026-10-15', 'Audit', 'Annual external audit for web & application infrastructure security');
-    insertEvent.run('EVT-103', 'Dussehra Festival', '2026-10-24', 'Holiday', 'National Festival Holiday');
-    insertEvent.run('EVT-104', 'A2Z Enterprise App Framework 3.0 Rollout', '2026-11-05', 'Milestone', 'Launch of high-performance microservices architecture & mobile SDK');
-    insertEvent.run('EVT-105', 'Diwali Celebration & Holiday', '2026-11-12', 'Holiday', 'Festival of Lights company celebration');
-    insertEvent.run('EVT-106', 'Christmas Day', '2026-12-25', 'Holiday', 'Winter corporate holiday');
-  }
-
-  // Pre-seed development tasks if empty or remove legacy BGV tasks
-  const tasksCountRow = db.prepare('SELECT COUNT(*) as count FROM verification_tasks').get() as { count: number };
-  if (tasksCountRow.count === 0) {
-    const insertTask = db.prepare(`
-      INSERT INTO verification_tasks (id, title, assigned_to, employee_name, priority, time, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    insertTask.run('TSK-101', 'Next.js Frontend Architecture & UI Sprint', 'EMP-101', 'Alok Kumar', 'High', 'SLA: 4h', 'In Progress');
-    insertTask.run('TSK-102', 'REST API Gateway & Payment SDK Integration', 'EMP-102', 'Priya Sharma', 'Urgent', 'SLA: 2h', 'Review');
-    insertTask.run('TSK-103', 'Mobile App Push Notifications & Offline Sync', 'EMP-103', 'Rahul Verma', 'Normal', 'SLA: 24h', 'Verified');
-    insertTask.run('TSK-104', 'Cloud Database Migration & Query Indexing', 'EMP-104', 'Sneha Patel', 'Normal', 'SLA: 12h', 'In Progress');
-  } else {
-    // Clean up any legacy BGV tasks if they exist
-    try {
-      db.prepare(`DELETE FROM verification_tasks WHERE id LIKE 'BGV%'`).run();
-      const currentCount = db.prepare('SELECT COUNT(*) as count FROM verification_tasks').get() as { count: number };
-      if (currentCount.count === 0) {
-        const insertTask = db.prepare(`
-          INSERT INTO verification_tasks (id, title, assigned_to, employee_name, priority, time, status)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
-        `);
-        insertTask.run('TSK-101', 'Next.js Frontend Architecture & UI Sprint', 'EMP-101', 'Alok Kumar', 'High', 'SLA: 4h', 'In Progress');
-        insertTask.run('TSK-102', 'REST API Gateway & Payment SDK Integration', 'EMP-102', 'Priya Sharma', 'Urgent', 'SLA: 2h', 'Review');
-        insertTask.run('TSK-103', 'Mobile App Push Notifications & Offline Sync', 'EMP-103', 'Rahul Verma', 'Normal', 'SLA: 24h', 'Verified');
-        insertTask.run('TSK-104', 'Cloud Database Migration & Query Indexing', 'EMP-104', 'Sneha Patel', 'Normal', 'SLA: 12h', 'In Progress');
-      }
-    } catch (e) {}
-  }
-}
-
-export interface VerificationTask {
-  id: string;
-  title: string;
-  assigned_to: string;
-  employee_name: string;
-  priority: 'Urgent' | 'High' | 'Normal';
-  time: string;
-  status: 'In Progress' | 'Review' | 'Verified' | 'Blocked';
-  created_at?: string;
-}
 
 export interface Employee {
   id: string;
@@ -273,6 +17,17 @@ export interface Employee {
   created_at?: string;
 }
 
+export interface VerificationTask {
+  id: string;
+  title: string;
+  assigned_to: string;
+  employee_name: string;
+  priority: 'Urgent' | 'High' | 'Normal';
+  time: string;
+  status: 'In Progress' | 'Review' | 'Verified' | 'Blocked';
+  created_at?: string;
+}
+
 export interface CompanyEvent {
   id: string;
   title: string;
@@ -282,12 +37,201 @@ export interface CompanyEvent {
   created_at?: string;
 }
 
+// Global singletons to prevent connection leaks across serverless / reloads
+declare global {
+  // eslint-disable-next-line no-var
+  var __a2z_libsql_client: Client | undefined;
+  // eslint-disable-next-line no-var
+  var __a2z_db_init_promise: Promise<void> | undefined;
+}
+
+export function isUsingTurso(): boolean {
+  return Boolean(process.env.TURSO_DATABASE_URL);
+}
+
+export function getDatabaseInfo() {
+  const usingTurso = isUsingTurso();
+  return {
+    engine: usingTurso ? 'Turso Cloud LibSQL / SQLite' : 'Local SQLite (@libsql/client)',
+    url: usingTurso 
+      ? (process.env.TURSO_DATABASE_URL?.split('@').pop() || 'Turso Cloud') 
+      : 'file:data/a2z.db',
+    isTurso: usingTurso,
+  };
+}
+
+function getClient(): Client {
+  if (!global.__a2z_libsql_client) {
+    const tursoUrl = process.env.TURSO_DATABASE_URL;
+    const tursoToken = process.env.TURSO_AUTH_TOKEN;
+
+    if (tursoUrl) {
+      global.__a2z_libsql_client = createClient({
+        url: tursoUrl,
+        authToken: tursoToken,
+      });
+    } else {
+      // Local SQLite fallback
+      const dataDir = path.join(process.cwd(), 'data');
+      if (!fs.existsSync(dataDir)) {
+        try {
+          fs.mkdirSync(dataDir, { recursive: true });
+        } catch {}
+      }
+      const localFilePath = path.join(dataDir, 'a2z.db').replace(/\\/g, '/');
+      global.__a2z_libsql_client = createClient({
+        url: `file:${localFilePath}`,
+      });
+    }
+  }
+  return global.__a2z_libsql_client;
+}
+
+async function initializeSchema(client: Client) {
+  // Create tables
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS employees (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      username TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      role TEXT NOT NULL,
+      department TEXT NOT NULL,
+      email TEXT NOT NULL,
+      phone TEXT DEFAULT '',
+      status TEXT DEFAULT 'PRESENT',
+      check_in_time TEXT DEFAULT '',
+      check_out_time TEXT DEFAULT '',
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS company_events (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      date TEXT NOT NULL,
+      type TEXT NOT NULL,
+      description TEXT DEFAULT '',
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS verification_tasks (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      assigned_to TEXT DEFAULT '',
+      employee_name TEXT DEFAULT '',
+      priority TEXT DEFAULT 'Normal',
+      time TEXT DEFAULT 'SLA: 4h',
+      status TEXT DEFAULT 'In Progress',
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  // Auto-seed Admin if not present
+  const adminCheck = await client.execute({
+    sql: 'SELECT id FROM employees WHERE username = ?',
+    args: ['admin'],
+  });
+
+  if (adminCheck.rows.length === 0) {
+    await client.execute({
+      sql: `INSERT INTO employees (id, name, username, password, role, department, email, phone, status, check_in_time)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        'ADM-001',
+        'System Administrator',
+        'admin',
+        'admin',
+        'ADMIN',
+        'Executive Management',
+        'admin@a2z.com',
+        '+91 90158 21469',
+        'PRESENT',
+        '08:30 AM',
+      ],
+    });
+  }
+
+  // Pre-seed initial employees to showcase realistic attendance counters if empty
+  const empCount = await client.execute('SELECT COUNT(*) as count FROM employees');
+  const count = Number(empCount.rows[0]?.count || 0);
+
+  if (count <= 1) {
+    const seedEmployees = [
+      ['EMP-101', 'Alok Kumar', 'alok', 'password123', 'Senior BGV Verification Engineer', 'Engineering & Core Tech', 'alok@a2z.com', '+91 98765 43210', 'PRESENT', '09:12 AM'],
+      ['EMP-102', 'Niharika Singh', 'niharika', 'password123', 'BGV Product Manager', 'Product & Verification Strategy', 'niharika@a2z.com', '+91 98765 43211', 'PRESENT', '09:28 AM'],
+      ['EMP-103', 'Rahul Verma', 'rahul', 'password123', 'Lead Forensic BGV Checker', 'Quality & Checker Operations', 'rahul.v@a2z.com', '+91 98765 43212', 'ABSENT', ''],
+      ['EMP-104', 'Priya Sharma', 'priya', 'password123', 'Compliance & Legal Risk Specialist', 'Legal & Compliance', 'priya.s@a2z.com', '+91 98765 43213', 'ON_LEAVE', ''],
+      ['EMP-105', 'Amit Patel', 'amit', 'password123', 'Distributed Systems Architect', 'Engineering & Core Tech', 'amit.p@a2z.com', '+91 98765 43214', 'PRESENT', '09:05 AM'],
+    ];
+
+    for (const emp of seedEmployees) {
+      await client.execute({
+        sql: `INSERT OR IGNORE INTO employees (id, name, username, password, role, department, email, phone, status, check_in_time)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: emp,
+      });
+    }
+  }
+
+  // Pre-seed company events if empty
+  const evtCount = await client.execute('SELECT COUNT(*) as count FROM company_events');
+  if (Number(evtCount.rows[0]?.count || 0) === 0) {
+    const seedEvents = [
+      ['EVT-101', 'Gandhi Jayanti', '2026-10-02', 'Holiday', 'National Holiday - Corporate offices closed'],
+      ['EVT-102', 'Q3 Cloud Architecture & Security Audit', '2026-10-15', 'Audit', 'Annual external audit for web & application infrastructure security'],
+      ['EVT-103', 'Dussehra Festival', '2026-10-24', 'Holiday', 'National Festival Holiday'],
+      ['EVT-104', 'A2Z Enterprise App Framework 3.0 Rollout', '2026-11-05', 'Milestone', 'Launch of high-performance microservices architecture & mobile SDK'],
+      ['EVT-105', 'Diwali Celebration & Holiday', '2026-11-12', 'Holiday', 'Festival of Lights company celebration'],
+      ['EVT-106', 'Christmas Day', '2026-12-25', 'Holiday', 'Winter corporate holiday'],
+    ];
+    for (const evt of seedEvents) {
+      await client.execute({
+        sql: `INSERT OR IGNORE INTO company_events (id, title, date, type, description) VALUES (?, ?, ?, ?, ?)`,
+        args: evt,
+      });
+    }
+  }
+
+  // Pre-seed development tasks if empty
+  const tskCount = await client.execute('SELECT COUNT(*) as count FROM verification_tasks');
+  if (Number(tskCount.rows[0]?.count || 0) === 0) {
+    const seedTasks = [
+      ['TSK-101', 'Next.js Frontend Architecture & UI Sprint', 'EMP-101', 'Alok Kumar', 'High', 'SLA: 4h', 'In Progress'],
+      ['TSK-102', 'REST API Gateway & Payment SDK Integration', 'EMP-102', 'Priya Sharma', 'Urgent', 'SLA: 2h', 'Review'],
+      ['TSK-103', 'Mobile App Push Notifications & Offline Sync', 'EMP-103', 'Rahul Verma', 'Normal', 'SLA: 24h', 'Verified'],
+      ['TSK-104', 'Cloud Database Migration & Query Indexing', 'EMP-104', 'Sneha Patel', 'Normal', 'SLA: 12h', 'In Progress'],
+    ];
+    for (const t of seedTasks) {
+      await client.execute({
+        sql: `INSERT OR IGNORE INTO verification_tasks (id, title, assigned_to, employee_name, priority, time, status) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        args: t,
+      });
+    }
+  }
+}
+
+async function getDb(): Promise<Client> {
+  const client = getClient();
+  if (!global.__a2z_db_init_promise) {
+    global.__a2z_db_init_promise = initializeSchema(client).catch((err) => {
+      global.__a2z_db_init_promise = undefined;
+      throw err;
+    });
+  }
+  await global.__a2z_db_init_promise;
+  return client;
+}
+
 export const db = {
   // EMPLOYEE METHODS
-  getEmployees(options?: { status?: string; search?: string }): Employee[] {
-    const database = getDatabase();
+  async getEmployees(options?: { status?: string; search?: string }): Promise<Employee[]> {
+    const client = await getDb();
     let query = 'SELECT id, name, username, role, department, email, phone, status, check_in_time, check_out_time, created_at FROM employees WHERE 1=1';
-    const params: unknown[] = [];
+    const params: (string | number)[] = [];
 
     if (options?.status && options.status !== 'ALL') {
       query += ' AND UPPER(status) = UPPER(?)';
@@ -301,52 +245,65 @@ export const db = {
     }
 
     query += ' ORDER BY created_at ASC';
-    return database.prepare(query).all(...params) as unknown as Employee[];
+    const res = await client.execute({ sql: query, args: params });
+    return res.rows as unknown as Employee[];
   },
 
-  getEmployeeById(id: string): Employee | undefined {
-    const database = getDatabase();
-    return database.prepare('SELECT id, name, username, role, department, email, phone, status, check_in_time, check_out_time FROM employees WHERE id = ?').get(id) as Employee | undefined;
+  async getEmployeeById(id: string): Promise<Employee | undefined> {
+    const client = await getDb();
+    const res = await client.execute({
+      sql: 'SELECT id, name, username, role, department, email, phone, status, check_in_time, check_out_time FROM employees WHERE id = ?',
+      args: [id],
+    });
+    return res.rows[0] as unknown as Employee | undefined;
   },
 
-  getEmployeeByUsername(username: string): Employee | undefined {
-    const database = getDatabase();
-    return database.prepare('SELECT * FROM employees WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)').get(username, username) as Employee | undefined;
+  async getEmployeeByUsername(username: string): Promise<Employee | undefined> {
+    const client = await getDb();
+    const res = await client.execute({
+      sql: 'SELECT * FROM employees WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)',
+      args: [username, username],
+    });
+    return res.rows[0] as unknown as Employee | undefined;
   },
 
-  getEmployeeByEmail(email: string): Employee | undefined {
-    const database = getDatabase();
-    return database.prepare('SELECT * FROM employees WHERE LOWER(email) = LOWER(?)').get(email) as Employee | undefined;
+  async getEmployeeByEmail(email: string): Promise<Employee | undefined> {
+    const client = await getDb();
+    const res = await client.execute({
+      sql: 'SELECT * FROM employees WHERE LOWER(email) = LOWER(?)',
+      args: [email],
+    });
+    return res.rows[0] as unknown as Employee | undefined;
   },
 
-  getAttendanceStats() {
-    const database = getDatabase();
-    const rows = database.prepare("SELECT status, COUNT(*) as count FROM employees WHERE role != 'ADMIN' GROUP BY status").all() as { status: string; count: number }[];
-    const totalRow = database.prepare("SELECT COUNT(*) as total FROM employees WHERE role != 'ADMIN'").get() as { total: number };
-    
+  async getAttendanceStats() {
+    const client = await getDb();
+    const rowsRes = await client.execute("SELECT status, COUNT(*) as count FROM employees WHERE role != 'ADMIN' GROUP BY status");
+    const totalRes = await client.execute("SELECT COUNT(*) as total FROM employees WHERE role != 'ADMIN'");
+
     let present = 0;
     let absent = 0;
     let onLeave = 0;
     let halfDay = 0;
 
-    for (const r of rows) {
+    for (const r of rowsRes.rows as unknown as { status: string; count: number }[]) {
       const s = (r.status || '').toUpperCase();
-      if (s === 'PRESENT') present += r.count;
-      else if (s === 'ABSENT') absent += r.count;
-      else if (s === 'ON_LEAVE') onLeave += r.count;
-      else if (s === 'HALF_DAY') halfDay += r.count;
+      if (s === 'PRESENT') present += Number(r.count);
+      else if (s === 'ABSENT') absent += Number(r.count);
+      else if (s === 'ON_LEAVE') onLeave += Number(r.count);
+      else if (s === 'HALF_DAY') halfDay += Number(r.count);
     }
 
     return {
-      total: totalRow?.total || 0,
+      total: Number(totalRes.rows[0]?.total || 0),
       present,
       absent,
       onLeave,
-      halfDay
+      halfDay,
     };
   },
 
-  createEmployee(data: {
+  async createEmployee(data: {
     id?: string;
     name: string;
     username: string;
@@ -356,15 +313,14 @@ export const db = {
     email: string;
     phone?: string;
     status?: 'PRESENT' | 'ABSENT' | 'ON_LEAVE' | 'HALF_DAY';
-  }): Employee {
-    const database = getDatabase();
-    
-    // Auto-generate employee ID if not provided
+  }): Promise<Employee> {
+    const client = await getDb();
+
     let empId = data.id?.trim();
     if (!empId) {
-      const allEmps = database.prepare("SELECT id FROM employees WHERE id LIKE 'EMP-%'").all() as { id: string }[];
+      const allEmpsRes = await client.execute("SELECT id FROM employees WHERE id LIKE 'EMP-%'");
       let maxNum = 105;
-      for (const e of allEmps) {
+      for (const e of allEmpsRes.rows as unknown as { id: string }[]) {
         const num = parseInt(e.id.replace('EMP-', ''), 10);
         if (!isNaN(num) && num > maxNum) maxNum = num;
       }
@@ -374,36 +330,37 @@ export const db = {
     const password = data.password || 'password123';
     const department = data.department?.trim() || 'Operations';
     const status = data.status || 'PRESENT';
-    const checkIn = (status === 'PRESENT' || status === 'HALF_DAY') ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const checkIn = (status === 'PRESENT' || status === 'HALF_DAY') 
+      ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+      : '';
 
-    const stmt = database.prepare(`
-      INSERT INTO employees (id, name, username, password, role, department, email, phone, status, check_in_time)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+    await client.execute({
+      sql: `INSERT INTO employees (id, name, username, password, role, department, email, phone, status, check_in_time)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        empId,
+        data.name,
+        data.username.trim().toLowerCase(),
+        password,
+        data.role,
+        department,
+        data.email,
+        data.phone || '',
+        status,
+        checkIn,
+      ],
+    });
 
-    stmt.run(
-      empId,
-      data.name,
-      data.username.trim().toLowerCase(),
-      password,
-      data.role,
-      department,
-      data.email,
-      data.phone || '',
-      status,
-      checkIn
-    );
-
-    return this.getEmployeeById(empId)!;
+    return (await this.getEmployeeById(empId))!;
   },
 
-  updateEmployee(id: string, updates: Partial<Employee>): Employee | undefined {
-    const database = getDatabase();
-    const existing = this.getEmployeeById(id);
+  async updateEmployee(id: string, updates: Partial<Employee>): Promise<Employee | undefined> {
+    const client = await getDb();
+    const existing = await this.getEmployeeById(id);
     if (!existing) return undefined;
 
     const fields: string[] = [];
-    const values: unknown[] = [];
+    const values: (string | number)[] = [];
 
     if (updates.name !== undefined) { fields.push('name = ?'); values.push(updates.name); }
     if (updates.role !== undefined) { fields.push('role = ?'); values.push(updates.role); }
@@ -411,9 +368,9 @@ export const db = {
     if (updates.email !== undefined) { fields.push('email = ?'); values.push(updates.email); }
     if (updates.phone !== undefined) { fields.push('phone = ?'); values.push(updates.phone); }
     if (updates.password !== undefined) { fields.push('password = ?'); values.push(updates.password); }
-    if (updates.status !== undefined) { 
-      fields.push('status = ?'); 
-      values.push(updates.status); 
+    if (updates.status !== undefined) {
+      fields.push('status = ?');
+      values.push(updates.status);
       if (updates.status === 'PRESENT' || updates.status === 'HALF_DAY') {
         fields.push('check_in_time = ?');
         values.push(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
@@ -428,45 +385,54 @@ export const db = {
     if (fields.length === 0) return existing;
 
     values.push(id);
-    database.prepare(`UPDATE employees SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+    await client.execute({
+      sql: `UPDATE employees SET ${fields.join(', ')} WHERE id = ?`,
+      args: values,
+    });
     return this.getEmployeeById(id);
   },
 
-  deleteEmployee(id: string): boolean {
-    const database = getDatabase();
+  async deleteEmployee(id: string): Promise<boolean> {
+    const client = await getDb();
     if (id === 'ADM-001') return false; // Root Admin cannot be deleted
-    const res = database.prepare("DELETE FROM employees WHERE id = ? AND role != 'ADMIN'").run(id);
-    return res.changes > 0;
+    const res = await client.execute({
+      sql: "DELETE FROM employees WHERE id = ? AND role != 'ADMIN'",
+      args: [id],
+    });
+    return res.rowsAffected > 0;
   },
 
   // EVENTS METHODS
-  getEvents(): CompanyEvent[] {
-    const database = getDatabase();
-    return database.prepare('SELECT * FROM company_events ORDER BY date ASC').all() as unknown as CompanyEvent[];
+  async getEvents(): Promise<CompanyEvent[]> {
+    const client = await getDb();
+    const res = await client.execute('SELECT * FROM company_events ORDER BY date ASC');
+    return res.rows as unknown as CompanyEvent[];
   },
 
-  createEvent(data: { title: string; date: string; type: string; description?: string }): CompanyEvent {
-    const database = getDatabase();
+  async createEvent(data: { title: string; date: string; type: string; description?: string }): Promise<CompanyEvent> {
+    const client = await getDb();
     const id = `EVT-${Date.now().toString().slice(-6)}`;
-    const stmt = database.prepare(`
-      INSERT INTO company_events (id, title, date, type, description)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-    stmt.run(id, data.title, data.date, data.type, data.description || '');
+    await client.execute({
+      sql: 'INSERT INTO company_events (id, title, date, type, description) VALUES (?, ?, ?, ?, ?)',
+      args: [id, data.title, data.date, data.type, data.description || ''],
+    });
     return { id, ...data, description: data.description || '' };
   },
 
-  deleteEvent(id: string): boolean {
-    const database = getDatabase();
-    const res = database.prepare('DELETE FROM company_events WHERE id = ?').run(id);
-    return res.changes > 0;
+  async deleteEvent(id: string): Promise<boolean> {
+    const client = await getDb();
+    const res = await client.execute({
+      sql: 'DELETE FROM company_events WHERE id = ?',
+      args: [id],
+    });
+    return res.rowsAffected > 0;
   },
 
   // TASKS METHODS
-  getTasks(filter?: { status?: string; employee_id?: string }): VerificationTask[] {
-    const database = getDatabase();
+  async getTasks(filter?: { status?: string; employee_id?: string }): Promise<VerificationTask[]> {
+    const client = await getDb();
     let query = 'SELECT * FROM verification_tasks WHERE 1=1';
-    const params: unknown[] = [];
+    const params: string[] = [];
     if (filter?.status && filter.status !== 'ALL') {
       query += ' AND status = ?';
       params.push(filter.status);
@@ -476,36 +442,37 @@ export const db = {
       params.push(filter.employee_id);
     }
     query += ' ORDER BY created_at DESC';
-    return database.prepare(query).all(...params) as unknown as VerificationTask[];
+    const res = await client.execute({ sql: query, args: params });
+    return res.rows as unknown as VerificationTask[];
   },
 
-  getTaskStats() {
-    const database = getDatabase();
-    const rows = database.prepare('SELECT status, COUNT(*) as count FROM verification_tasks GROUP BY status').all() as { status: string; count: number }[];
-    const totalRow = database.prepare('SELECT COUNT(*) as total FROM verification_tasks').get() as { total: number };
+  async getTaskStats() {
+    const client = await getDb();
+    const rowsRes = await client.execute('SELECT status, COUNT(*) as count FROM verification_tasks GROUP BY status');
+    const totalRes = await client.execute('SELECT COUNT(*) as total FROM verification_tasks');
 
     let inProgress = 0;
     let review = 0;
     let verified = 0;
     let blocked = 0;
 
-    for (const r of rows) {
-      if (r.status === 'In Progress') inProgress += r.count;
-      else if (r.status === 'Review') review += r.count;
-      else if (r.status === 'Verified') verified += r.count;
-      else if (r.status === 'Blocked') blocked += r.count;
+    for (const r of rowsRes.rows as unknown as { status: string; count: number }[]) {
+      if (r.status === 'In Progress') inProgress += Number(r.count);
+      else if (r.status === 'Review') review += Number(r.count);
+      else if (r.status === 'Verified') verified += Number(r.count);
+      else if (r.status === 'Blocked') blocked += Number(r.count);
     }
 
     return {
-      total: totalRow?.total || 0,
+      total: Number(totalRes.rows[0]?.total || 0),
       inProgress,
       review,
       verified,
-      blocked
+      blocked,
     };
   },
 
-  createTask(data: {
+  async createTask(data: {
     id?: string;
     title: string;
     assigned_to?: string;
@@ -513,8 +480,8 @@ export const db = {
     priority?: 'Urgent' | 'High' | 'Normal';
     time?: string;
     status?: 'In Progress' | 'Review' | 'Verified' | 'Blocked';
-  }): VerificationTask {
-    const database = getDatabase();
+  }): Promise<VerificationTask> {
+    const client = await getDb();
     const id = data.id?.trim() && !data.id.startsWith('BGV-') ? data.id.trim() : `TSK-${Math.floor(100 + Math.random() * 900)}`;
     const priority = data.priority || 'Normal';
     const time = data.time || 'SLA: 4h';
@@ -522,11 +489,11 @@ export const db = {
     const assigned_to = data.assigned_to || '';
     const employee_name = data.employee_name || 'Staff Member';
 
-    const stmt = database.prepare(`
-      INSERT INTO verification_tasks (id, title, assigned_to, employee_name, priority, time, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-    stmt.run(id, data.title, assigned_to, employee_name, priority, time, status);
+    await client.execute({
+      sql: 'INSERT INTO verification_tasks (id, title, assigned_to, employee_name, priority, time, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      args: [id, data.title, assigned_to, employee_name, priority, time, status],
+    });
+
     return {
       id,
       title: data.title,
@@ -534,17 +501,21 @@ export const db = {
       employee_name,
       priority,
       time,
-      status
+      status,
     };
   },
 
-  updateTask(id: string, updates: Partial<VerificationTask>): VerificationTask | undefined {
-    const database = getDatabase();
-    const existing = database.prepare('SELECT * FROM verification_tasks WHERE id = ?').get(id) as unknown as VerificationTask;
+  async updateTask(id: string, updates: Partial<VerificationTask>): Promise<VerificationTask | undefined> {
+    const client = await getDb();
+    const existingRes = await client.execute({
+      sql: 'SELECT * FROM verification_tasks WHERE id = ?',
+      args: [id],
+    });
+    const existing = existingRes.rows[0] as unknown as VerificationTask | undefined;
     if (!existing) return undefined;
 
     const fields: string[] = [];
-    const values: unknown[] = [];
+    const values: (string | number)[] = [];
 
     if (updates.title !== undefined) { fields.push('title = ?'); values.push(updates.title); }
     if (updates.status !== undefined) { fields.push('status = ?'); values.push(updates.status); }
@@ -556,13 +527,24 @@ export const db = {
     if (fields.length === 0) return existing;
 
     values.push(id);
-    database.prepare(`UPDATE verification_tasks SET ${fields.join(', ')} WHERE id = ?`).run(...values);
-    return database.prepare('SELECT * FROM verification_tasks WHERE id = ?').get(id) as unknown as VerificationTask;
+    await client.execute({
+      sql: `UPDATE verification_tasks SET ${fields.join(', ')} WHERE id = ?`,
+      args: values,
+    });
+
+    const updatedRes = await client.execute({
+      sql: 'SELECT * FROM verification_tasks WHERE id = ?',
+      args: [id],
+    });
+    return updatedRes.rows[0] as unknown as VerificationTask;
   },
 
-  deleteTask(id: string): boolean {
-    const database = getDatabase();
-    const res = database.prepare('DELETE FROM verification_tasks WHERE id = ?').run(id);
-    return res.changes > 0;
-  }
+  async deleteTask(id: string): Promise<boolean> {
+    const client = await getDb();
+    const res = await client.execute({
+      sql: 'DELETE FROM verification_tasks WHERE id = ?',
+      args: [id],
+    });
+    return res.rowsAffected > 0;
+  },
 };

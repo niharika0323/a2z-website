@@ -147,6 +147,17 @@ export default function TechBackground() {
       }}
     >
       <style>{`
+        @keyframes cinematicCameraDrift {
+          0% {
+            transform: scale(1.02) translate(0px, 0px);
+          }
+          50% {
+            transform: scale(1.05) translate(-10px, -6px);
+          }
+          100% {
+            transform: scale(1.02) translate(8px, 4px);
+          }
+        }
         @keyframes laserHoloScan {
           0% {
             transform: translateY(-100%);
@@ -165,31 +176,47 @@ export default function TechBackground() {
         }
       `}</style>
 
-      {/* 1. Main HTML5 Background Video (Replaces previous background) */}
+      {/* 1. Master 4K Custom 3D Holographic Developer Artwork (Balanced Visibility) */}
+      <div
+        style={{
+          position: "absolute",
+          inset: "-3%",
+          width: "106%",
+          height: "106%",
+          backgroundImage: "url(/custom-hologram-developer.jpg)",
+          backgroundSize: "cover",
+          backgroundPosition: "center 42%",
+          opacity: 0.62, // Slightly increased visibility
+          filter: "brightness(0.98) contrast(1.15) saturate(1.2)",
+          animation: "cinematicCameraDrift 22s ease-in-out infinite alternate",
+          zIndex: 0
+        }}
+      />
+
+      {/* 2. Optional Working MP4 Video Fallback */}
       <video
         autoPlay
         loop
         muted
         playsInline
-        preload="auto"
-        poster="/bit_bg_poster.jpg"
+        poster="/custom-hologram-developer.jpg"
         style={{
           position: "absolute",
           inset: 0,
           width: "100%",
           height: "100%",
           objectFit: "cover",
-          objectPosition: "center",
-          opacity: 0.75,
-          zIndex: 0,
-          filter: "contrast(1.2) brightness(1.08)"
+          objectPosition: "center 42%",
+          filter: "hue-rotate(200deg) saturate(1.35) contrast(1.15) brightness(1.0)",
+          opacity: 0.45, // Slightly increased video visibility
+          zIndex: 1,
+          mixBlendMode: "screen"
         }}
       >
-        <source src="/bit_bg.webm" type="video/webm" />
-        <source src="/bit_bg.mp4" type="video/mp4" />
+        <source src="/pinterest-video.mp4" type="video/mp4" />
       </video>
 
-      {/* 2. Real-Time High-DPI 60fps Animation Canvas (Oscillating Waves & Subtle Sparks) */}
+      {/* 3. Real-Time High-DPI 60fps Animation Canvas (Oscillating Waves & Subtle Sparks) */}
       <canvas
         ref={canvasRef}
         style={{
@@ -197,13 +224,13 @@ export default function TechBackground() {
           inset: 0,
           width: "100%",
           height: "100%",
-          opacity: 0.7,
-          zIndex: 1,
+          opacity: 0.82,
+          zIndex: 2,
           pointerEvents: "none"
         }}
       />
 
-      {/* 3. Sweeping Laser Hologram Scanline */}
+      {/* 4. Sweeping Laser Hologram Scanline */}
       <div
         style={{
           position: "absolute",
@@ -214,21 +241,21 @@ export default function TechBackground() {
           background: "linear-gradient(90deg, transparent, #00f5d4 30%, #38bdf8 70%, transparent)",
           boxShadow: "0 0 12px #00f5d4",
           animation: "laserHoloScan 8.5s ease-in-out infinite",
-          zIndex: 2,
+          zIndex: 3,
           pointerEvents: "none"
         }}
       />
 
-      {/* 4. Atmospheric Dark Cyber Vignette to ensure text readability */}
+      {/* 5. Balanced Atmospheric Dark Cyber Vignette */}
       <div
         style={{
           position: "absolute",
           inset: 0,
           background: `
-            radial-gradient(ellipse at 50% 50%, rgba(7, 10, 16, 0.3) 0%, rgba(7, 10, 16, 0.7) 75%, #070a10 100%),
-            linear-gradient(to bottom, rgba(7, 10, 16, 0.5) 0%, transparent 20%, transparent 80%, #070a10 100%)
+            radial-gradient(ellipse at 50% 50%, rgba(7, 10, 16, 0.25) 0%, rgba(7, 10, 16, 0.58) 65%, #070a10 100%),
+            linear-gradient(to bottom, rgba(7, 10, 16, 0.5) 0%, transparent 18%, transparent 82%, #070a10 100%)
           `,
-          zIndex: 3,
+          zIndex: 4,
           pointerEvents: "none"
         }}
       />

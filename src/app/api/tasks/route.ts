@@ -7,8 +7,8 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status') || 'ALL';
     const employee_id = searchParams.get('employee_id') || undefined;
 
-    const tasks = db.getTasks({ status, employee_id });
-    const stats = db.getTaskStats();
+    const tasks = await db.getTasks({ status, employee_id });
+    const stats = await db.getTaskStats();
 
     return NextResponse.json({ tasks, stats });
   } catch (error: unknown) {
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const task = db.createTask({
+    const task = await db.createTask({
       id: id?.trim(),
       title: title.trim(),
       assigned_to: assigned_to?.trim(),
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       status,
     });
 
-    const stats = db.getTaskStats();
+    const stats = await db.getTaskStats();
     return NextResponse.json({ task, stats }, { status: 201 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to create task';
@@ -56,12 +56,12 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Task ID is required.' }, { status: 400 });
     }
 
-    const updated = db.updateTask(id, updates);
+    const updated = await db.updateTask(id, updates);
     if (!updated) {
       return NextResponse.json({ error: 'Task not found.' }, { status: 404 });
     }
 
-    const stats = db.getTaskStats();
+    const stats = await db.getTaskStats();
     return NextResponse.json({ task: updated, stats });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to update task';
@@ -78,12 +78,12 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Task ID is required.' }, { status: 400 });
     }
 
-    const success = db.deleteTask(id);
+    const success = await db.deleteTask(id);
     if (!success) {
       return NextResponse.json({ error: 'Task not found or could not be deleted.' }, { status: 404 });
     }
 
-    const stats = db.getTaskStats();
+    const stats = await db.getTaskStats();
     return NextResponse.json({ success: true, stats });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to delete task';

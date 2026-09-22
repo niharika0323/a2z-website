@@ -1,24 +1,25 @@
 import { NextResponse } from "next/server";
 import path from "node:path";
 import fs from "node:fs";
-import { db } from "@/lib/db";
+import { db, getDatabaseInfo } from "@/lib/db";
 
 export async function GET() {
   try {
+    const dbInfo = getDatabaseInfo();
     const dbFilePath = path.join(process.cwd(), "data", "a2z.db");
     let fileSizeFormatted = "N/A";
     let fileExists = false;
 
-    if (fs.existsSync(dbFilePath)) {
+    if (!dbInfo.isTurso && fs.existsSync(dbFilePath)) {
       fileExists = true;
       const stats = fs.statSync(dbFilePath);
       fileSizeFormatted = `${(stats.size / 1024).toFixed(1)} KB`;
     }
 
-    const employees = db.getEmployees();
-    const tasks = db.getTasks();
-    const events = db.getEvents();
-    const attendance = db.getAttendanceStats();
+    const employees = await db.getEmployees();
+    const tasks = await db.getTasks();
+    const events = await db.getEvents();
+    const attendance = await db.getAttendanceStats();
 
     const tables = [
       {
@@ -44,11 +45,13 @@ export async function GET() {
     return NextResponse.json({
       status: "healthy",
       database: {
-        engine: "SQLite 3 (WAL mode via node:sqlite / @libsql/client)",
-        filePath: "data/a2z.db",
-        absolutePath: dbFilePath,
-        fileExists,
-        fileSize: fileSizeFormatted,
+        engine: dbInfo.engine,
+        isTurso: dbInfo.isTurso,
+        url: dbInfo.url,
+        filePath: dbInfo.isTurso ? "Turso Cloud DB" : "data/a2z.db",
+        absolutePath: dbInfo.isTurso ? "Turso Cloud Connection" : dbFilePath,
+        fileExists: dbInfo.isTurso ? true : fileExists,
+        fileSize: dbInfo.isTurso ? "Cloud Managed" : fileSizeFormatted,
         totalRecords: employees.length + tasks.length + events.length
       },
       tables,
@@ -59,11 +62,12 @@ export async function GET() {
       nodeVersion: process.version,
       serverTime: new Date().toISOString()
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to inspect backend database status";
     return NextResponse.json(
       {
         status: "error",
-        error: error.message || "Failed to inspect backend database status"
+        error: message
       },
       { status: 500 }
     );
