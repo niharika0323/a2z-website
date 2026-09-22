@@ -36,7 +36,7 @@ interface Employee {
   department: string;
   email: string;
   phone: string;
-  status: "PRESENT" | "ABSENT" | "ON_LEAVE" | "HALF_DAY";
+  status: "PRESENT" | "ABSENT" | "ON_LEAVE" | "HALF_DAY" | "" | string;
   check_in_time?: string;
   check_out_time?: string;
 }
@@ -60,13 +60,6 @@ export interface VerificationTask {
   status: "In Progress" | "Review" | "Verified" | "Blocked";
 }
 
-const DEFAULT_TASKS: VerificationTask[] = [
-  { id: "TSK-101", task: "Next.js 16 Server Component Optimization", priority: "High", time: "SLA: 4h", status: "In Progress" },
-  { id: "TSK-102", task: "Enterprise REST API Gateway & OAuth Security", priority: "Urgent", time: "SLA: 2h", status: "Review" },
-  { id: "TSK-103", task: "Mobile Push Notification Engine & Offline Sync", priority: "Normal", time: "SLA: 24h", status: "Verified" },
-  { id: "TSK-104", task: "Cloud Database Query Indexing & Backup Verification", priority: "Normal", time: "SLA: 12h", status: "In Progress" }
-];
-
 export default function EmployeePortal() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<Employee | null>(null);
@@ -76,8 +69,8 @@ export default function EmployeePortal() {
   const [notification, setNotification] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<string>("");
 
-  // Employee Task Management State
-  const [tasks, setTasks] = useState<VerificationTask[]>(DEFAULT_TASKS);
+  // Employee Task Management State (Scoped strictly to current user, no static defaults)
+  const [tasks, setTasks] = useState<VerificationTask[]>([]);
   const [taskFilter, setTaskFilter] = useState<string>("ALL");
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [directorySearch, setDirectorySearch] = useState("");
@@ -114,35 +107,37 @@ export default function EmployeePortal() {
       const parsed = JSON.parse(stored);
       setCurrentUser(parsed);
       fetchLiveUserData(parsed.id);
+      fetchTasks(parsed.id, parsed.username);
     } catch (e) {
       router.push("/login");
+      return;
     }
 
-    const savedTasks = localStorage.getItem("a2z_employee_tasks");
-    if (savedTasks) {
-      try {
-        const parsed = JSON.parse(savedTasks);
-        if (parsed.length > 0) {
-          setTasks(parsed);
-        }
-      } catch (e) {}
-    }
-
-    fetchTasks();
     fetchDirectory();
     fetchEvents();
   }, [router]);
 
-  const fetchTasks = async () => {
+  const fetchTasks = async (empId?: string, username?: string) => {
     try {
-      const res = await fetch("/api/tasks");
+      const targetId = empId || currentUser?.id;
+      const targetUser = username || currentUser?.username;
+      let url = "/api/tasks";
+      if (targetId) {
+        url += `?employee_id=${encodeURIComponent(targetId)}`;
+        if (targetUser) {
+          url += `&username=${encodeURIComponent(targetUser)}`;
+        }
+      }
+      const res = await fetch(url);
       const data = await res.json();
-      if (res.ok && data.tasks && data.tasks.length > 0) {
+      if (res.ok && Array.isArray(data.tasks)) {
         setTasks(data.tasks);
-        localStorage.setItem("a2z_employee_tasks", JSON.stringify(data.tasks));
+      } else {
+        setTasks([]);
       }
     } catch (e) {
-      console.warn("Could not load server tasks, using local cache", e);
+      console.warn("Could not load server tasks", e);
+      setTasks([]);
     }
   };
 
@@ -154,7 +149,7 @@ export default function EmployeePortal() {
       id: `TSK-${Math.floor(100 + Math.random() * 900)}`,
       task: newTask.task,
       title: newTask.task,
-      assigned_to: currentUser?.id || "EMP-101",
+      assigned_to: currentUser?.id || "",
       employee_name: currentUser?.name || "Staff Member",
       priority: newTask.priority,
       time: newTask.time || "SLA: 4h",
@@ -169,18 +164,12 @@ export default function EmployeePortal() {
       });
       if (res.ok) {
         const data = await res.json();
-        const updated = [data.task || taskObj, ...tasks];
-        setTasks(updated);
-        localStorage.setItem("a2z_employee_tasks", JSON.stringify(updated));
+        setTasks(prev => [data.task || taskObj, ...prev]);
       } else {
-        const updated = [taskObj, ...tasks];
-        setTasks(updated);
-        localStorage.setItem("a2z_employee_tasks", JSON.stringify(updated));
+        setTasks(prev => [taskObj, ...prev]);
       }
     } catch (err) {
-      const updated = [taskObj, ...tasks];
-      setTasks(updated);
-      localStorage.setItem("a2z_employee_tasks", JSON.stringify(updated));
+      setTasks(prev => [taskObj, ...prev]);
     }
 
     setShowAddTaskModal(false);
@@ -189,9 +178,7 @@ export default function EmployeePortal() {
   };
 
   const handleUpdateTaskStatus = async (id: string, newStatus: VerificationTask["status"]) => {
-    const updated = tasks.map(t => (t.id === id ? { ...t, status: newStatus } : t));
-    setTasks(updated);
-    localStorage.setItem("a2z_employee_tasks", JSON.stringify(updated));
+    setTasks(prev => prev.map(t => (t.id === id ? { ...t, status: newStatus } : t)));
 
     try {
       await fetch("/api/tasks", {
@@ -206,9 +193,7 @@ export default function EmployeePortal() {
   };
 
   const handleDeleteTask = async (id: string) => {
-    const updated = tasks.filter(t => t.id !== id);
-    setTasks(updated);
-    localStorage.setItem("a2z_employee_tasks", JSON.stringify(updated));
+    setTasks(prev => prev.filter(t => t.id !== id));
 
     try {
       await fetch(`/api/tasks?id=${id}`, { method: "DELETE" });
@@ -265,6 +250,8 @@ export default function EmployeePortal() {
 
   const handleLogout = () => {
     localStorage.removeItem("a2z_user");
+    localStorage.removeItem("a2z_employee_tasks");
+    document.cookie = "a2z_role=; path=/; max-age=0";
     router.push("/login");
   };
 
@@ -496,6 +483,23 @@ export default function EmployeePortal() {
                 Current Shift Status
               </div>
               <div>
+                {(!currentUser.status || currentUser.status === "") && (
+                  <span style={{ 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '0.45rem', 
+                    background: 'rgba(148, 163, 184, 0.12)', 
+                    color: '#94a3b8', 
+                    border: '1px solid rgba(148, 163, 184, 0.3)', 
+                    padding: '0.35rem 0.95rem', 
+                    borderRadius: '20px', 
+                    fontWeight: 700, 
+                    fontSize: '0.8rem' 
+                  }}>
+                    <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#64748b' }} />
+                    Not Punched In (—)
+                  </span>
+                )}
                 {currentUser.status === "PRESENT" && (
                   <span style={{ 
                     display: 'inline-flex', 
@@ -752,8 +756,14 @@ export default function EmployeePortal() {
               ))}
 
               {filteredTasks.length === 0 && (
-                <div className="glass-card" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', fontSize: '0.9rem' }}>
-                  No tasks found under this filter.
+                <div className="glass-card" style={{ textAlign: 'center', padding: '3.5rem 2rem', color: '#94a3b8', fontSize: '0.9rem', borderRadius: '14px', border: '1px dashed rgba(255, 255, 255, 0.15)' }}>
+                  <Briefcase size={36} color="#64748b" style={{ margin: '0 auto 0.8rem auto' }} />
+                  <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#ffffff', marginBottom: '0.3rem' }}>
+                    No Active Tasks in Your Queue
+                  </div>
+                  <div style={{ color: '#94a3b8', fontSize: '0.84rem', maxWidth: '380px', margin: '0 auto' }}>
+                    You have no pending tasks. Click &quot;Add New Task&quot; above to log your own work items or wait for admin assignment.
+                  </div>
                 </div>
               )}
             </div>
@@ -864,7 +874,7 @@ export default function EmployeePortal() {
             </div>
 
             <div style={{ padding: '0.8rem 1.2rem', borderRadius: '10px', background: 'rgba(9, 13, 22, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.82rem', color: '#94a3b8' }}>
-              Current State: <strong style={{ color: '#ffffff' }}>{currentUser.status}</strong> {currentUser.check_in_time ? `• Punch In: ${currentUser.check_in_time}` : ''} {currentUser.check_out_time ? `• Punch Out: ${currentUser.check_out_time}` : ''}
+              Current State: <strong style={{ color: '#ffffff' }}>{currentUser.status || 'Not Punched In (—)'}</strong> {currentUser.check_in_time ? `• Punch In: ${currentUser.check_in_time}` : ''} {currentUser.check_out_time ? `• Punch Out: ${currentUser.check_out_time}` : ''}
             </div>
           </div>
         )}

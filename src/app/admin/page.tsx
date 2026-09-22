@@ -44,7 +44,7 @@ interface Employee {
   department: string;
   email: string;
   phone: string;
-  status: "PRESENT" | "ABSENT" | "ON_LEAVE" | "HALF_DAY";
+  status: "PRESENT" | "ABSENT" | "ON_LEAVE" | "HALF_DAY" | "" | string;
   check_in_time: string;
   check_out_time: string;
 }
@@ -106,9 +106,10 @@ export default function AdminDashboard() {
   const [showAddEmpModal, setShowAddEmpModal] = useState(false);
   const [empModalError, setEmpModalError] = useState("");
   const [showAddEventModal, setShowAddEventModal] = useState(false);
+  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
-  // Form states - Add Employee
+  // Form states - Add Employee (Default status is blank — only marked when employee punches in)
   const [newEmp, setNewEmp] = useState({
     id: "",
     name: "",
@@ -118,7 +119,22 @@ export default function AdminDashboard() {
     department: "Security & Verification Ops",
     email: "",
     phone: "",
-    status: "PRESENT" as "PRESENT" | "ABSENT" | "ON_LEAVE"
+    status: ""
+  });
+
+  // Form states - Admin Assign Task
+  const [adminNewTask, setAdminNewTask] = useState<{
+    title: string;
+    assigned_to: string;
+    priority: "Urgent" | "High" | "Normal";
+    time: string;
+    status: "In Progress" | "Review" | "Verified" | "Blocked";
+  }>({
+    title: "",
+    assigned_to: "",
+    priority: "High",
+    time: "SLA: 4h",
+    status: "In Progress"
   });
 
   // Form states - Add Event
@@ -297,7 +313,7 @@ export default function AdminDashboard() {
           department: "Security & Verification Ops",
           email: "",
           phone: "",
-          status: "PRESENT"
+          status: ""
         });
         showNotification(`Employee ${data.employee.name} created successfully!`);
       } else {
@@ -308,6 +324,51 @@ export default function AdminDashboard() {
     } catch (err) {
       setEmpModalError("Error creating employee. Please check connection.");
       showNotification("Error creating employee", "error");
+    }
+  };
+
+  // Admin Assign Task to Employee
+  const handleAdminCreateTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminNewTask.title.trim()) {
+      showNotification("Please enter a task title", "error");
+      return;
+    }
+
+    const assignedEmp = employees.find(e => e.id === adminNewTask.assigned_to || e.username === adminNewTask.assigned_to);
+
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: adminNewTask.title.trim(),
+          assigned_to: adminNewTask.assigned_to,
+          employee_name: assignedEmp?.name || adminNewTask.assigned_to || "Assigned Engineer",
+          priority: adminNewTask.priority,
+          time: adminNewTask.time || "SLA: 4h",
+          status: adminNewTask.status
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setTasks(prev => [data.task, ...prev]);
+        if (data.stats) setTaskStats(data.stats);
+        setShowAddTaskModal(false);
+        setAdminNewTask({
+          title: "",
+          assigned_to: "",
+          priority: "High",
+          time: "SLA: 4h",
+          status: "In Progress"
+        });
+        showNotification("Task assigned successfully!");
+      } else {
+        showNotification(data.error || "Failed to create task", "error");
+      }
+    } catch (err) {
+      showNotification("Error assigning task", "error");
     }
   };
 
@@ -825,6 +886,11 @@ export default function AdminDashboard() {
                           {emp.status === "ON_LEAVE" && (
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: 'rgba(236, 72, 153, 0.15)', color: '#f472b6', border: '1px solid rgba(236, 72, 153, 0.35)', padding: '0.35rem 0.75rem', borderRadius: '16px', fontWeight: 700, fontSize: '0.84rem' }}>
                               <Clock3 size={14} /> On Leave
+                            </span>
+                          )}
+                          {(!emp.status || emp.status === "") && (
+                            <span style={{ color: '#64748b', fontSize: '1.1rem', fontWeight: 800, paddingLeft: '0.6rem' }} title="No attendance logged yet">
+                              —
                             </span>
                           )}
                         </td>
@@ -1366,6 +1432,27 @@ export default function AdminDashboard() {
                   padding: '0.55rem 1.1rem',
                   borderRadius: '8px',
                   border: '1px solid rgba(56, 189, 248, 0.35)',
+                  background: 'rgba(16, 24, 40, 0.85)',
+                  color: '#ffffff',
+                  fontSize: '0.88rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+                title="Refresh Tasks"
+              >
+                <RefreshCw size={15} />
+                Refresh
+              </button>
+
+              <button
+                onClick={() => setShowAddTaskModal(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  padding: '0.55rem 1.15rem',
+                  borderRadius: '8px',
+                  border: 'none',
                   background: 'linear-gradient(135deg, #00f5d4 0%, #0284c7 100%)',
                   color: '#06080e',
                   fontSize: '0.88rem',
@@ -1373,10 +1460,8 @@ export default function AdminDashboard() {
                   cursor: 'pointer',
                   boxShadow: '0 2px 10px rgba(0, 245, 212, 0.25)'
                 }}
-                title="Refresh Tasks"
               >
-                <RefreshCw size={15} />
-                Refresh
+                <Plus size={16} /> Assign Task
               </button>
             </div>
 
@@ -1679,16 +1764,20 @@ export default function AdminDashboard() {
                           <td style={{ padding: '0.85rem 1.1rem', color: '#cbd5e1' }}>{emp.role}</td>
                           <td style={{ padding: '0.85rem 1.1rem', color: '#94a3b8' }}>{emp.department}</td>
                           <td style={{ padding: '0.85rem 1.1rem' }}>
-                            <span style={{
-                              fontSize: '0.82rem',
-                              fontWeight: 800,
-                              padding: '0.25rem 0.65rem',
-                              borderRadius: '20px',
-                              color: emp.status === 'PRESENT' ? '#34d399' : emp.status === 'ABSENT' ? '#f87171' : '#fbbf24',
-                              background: emp.status === 'PRESENT' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'
-                            }}>
-                              {emp.status}
-                            </span>
+                            {emp.status ? (
+                              <span style={{
+                                fontSize: '0.82rem',
+                                fontWeight: 800,
+                                padding: '0.25rem 0.65rem',
+                                borderRadius: '20px',
+                                color: emp.status === 'PRESENT' ? '#34d399' : emp.status === 'ABSENT' ? '#f87171' : '#fbbf24',
+                                background: emp.status === 'PRESENT' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'
+                              }}>
+                                {emp.status}
+                              </span>
+                            ) : (
+                              <span style={{ color: '#64748b', fontWeight: 800, fontSize: '1rem', paddingLeft: '0.5rem' }}>—</span>
+                            )}
                           </td>
                           <td style={{ padding: '0.85rem 1.1rem', color: '#94a3b8' }}>{emp.check_in_time || "—"}</td>
                         </tr>
@@ -2255,6 +2344,199 @@ export default function AdminDashboard() {
                     }}
                   >
                     Add to Calendar
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* MODAL 3: ASSIGN TASK TO EMPLOYEE */}
+      <AnimatePresence>
+        {showAddTaskModal && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.75)',
+            backdropFilter: 'blur(12px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem'
+          }}>
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.92, opacity: 0 }}
+              style={{
+                width: '100%',
+                maxWidth: '520px',
+                padding: '2.4rem',
+                background: 'rgba(16, 24, 40, 0.95)',
+                backdropFilter: 'blur(25px)',
+                border: '1px solid rgba(56, 189, 248, 0.35)',
+                borderRadius: '20px',
+                boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(0, 245, 212, 0.12)',
+                boxSizing: 'border-box'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                    Assign Task to Staff
+                  </h3>
+                  <p style={{ fontSize: '0.84rem', color: '#94a3b8', margin: '0.2rem 0 0 0' }}>
+                    Create a task and assign it to a specific employee
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowAddTaskModal(false)}
+                  style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.4rem' }}
+                >
+                  <X size={22} />
+                </button>
+              </div>
+
+              <form onSubmit={handleAdminCreateTask} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.4rem' }}>
+                    Task Title / Objective *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Implement Secure OAuth Flow"
+                    value={adminNewTask.title}
+                    onChange={e => setAdminNewTask({ ...adminNewTask, title: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 0.9rem',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(56, 189, 248, 0.3)',
+                      background: 'rgba(7, 10, 16, 0.75)',
+                      color: '#ffffff',
+                      fontSize: '0.9rem',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.4rem' }}>
+                    Assign to Employee *
+                  </label>
+                  <select
+                    required
+                    value={adminNewTask.assigned_to}
+                    onChange={e => setAdminNewTask({ ...adminNewTask, assigned_to: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 0.9rem',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(56, 189, 248, 0.3)',
+                      background: 'rgba(7, 10, 16, 0.9)',
+                      color: '#ffffff',
+                      fontSize: '0.9rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="">-- Select Team Member --</option>
+                    {employees.map(emp => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.name} ({emp.id} &bull; {emp.role})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.4rem' }}>
+                      Priority
+                    </label>
+                    <select
+                      value={adminNewTask.priority}
+                      onChange={e => setAdminNewTask({ ...adminNewTask, priority: e.target.value as any })}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 0.9rem',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                        background: 'rgba(7, 10, 16, 0.9)',
+                        color: '#ffffff',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="Urgent">🔴 Urgent</option>
+                      <option value="High">🟡 High</option>
+                      <option value="Normal">🔵 Normal</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.4rem' }}>
+                      SLA Target
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. SLA: 4h"
+                      value={adminNewTask.time}
+                      onChange={e => setAdminNewTask({ ...adminNewTask, time: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 0.9rem',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                        background: 'rgba(7, 10, 16, 0.75)',
+                        color: '#ffffff',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.8rem', marginTop: '1rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddTaskModal(false)}
+                    style={{
+                      padding: '0.75rem 1.4rem',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      color: '#cbd5e1',
+                      cursor: 'pointer',
+                      fontWeight: 700,
+                      fontSize: '0.88rem'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    style={{
+                      padding: '0.75rem 1.8rem',
+                      fontSize: '0.9rem',
+                      fontWeight: 800,
+                      borderRadius: '10px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #00f5d4 0%, #0284c7 100%)',
+                      color: '#070a10',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 18px rgba(0, 245, 212, 0.35)'
+                    }}
+                  >
+                    Assign Task
                   </button>
                 </div>
               </form>

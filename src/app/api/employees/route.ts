@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
       department: department?.trim() || 'Operations',
       email: email.trim(),
       phone: phone?.trim() || '',
-      status: status || 'PRESENT',
+      status: status || '',
     });
 
     const stats = await db.getAttendanceStats();

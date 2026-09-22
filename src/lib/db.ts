@@ -11,7 +11,7 @@ export interface Employee {
   department: string;
   email: string;
   phone: string;
-  status: 'PRESENT' | 'ABSENT' | 'ON_LEAVE' | 'HALF_DAY';
+  status: 'PRESENT' | 'ABSENT' | 'ON_LEAVE' | 'HALF_DAY' | '' | string;
   check_in_time: string;
   check_out_time: string;
   created_at?: string;
@@ -99,7 +99,7 @@ async function initializeSchema(client: Client) {
       department TEXT NOT NULL,
       email TEXT NOT NULL,
       phone TEXT DEFAULT '',
-      status TEXT DEFAULT 'PRESENT',
+      status TEXT DEFAULT '',
       check_in_time TEXT DEFAULT '',
       check_out_time TEXT DEFAULT '',
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
@@ -329,7 +329,7 @@ export const db = {
 
     const password = data.password || 'password123';
     const department = data.department?.trim() || 'Operations';
-    const status = data.status || 'PRESENT';
+    const status = data.status || '';
     const checkIn = (status === 'PRESENT' || status === 'HALF_DAY') 
       ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
       : '';
@@ -374,7 +374,7 @@ export const db = {
       if (updates.status === 'PRESENT' || updates.status === 'HALF_DAY') {
         fields.push('check_in_time = ?');
         values.push(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-      } else if (updates.status === 'ABSENT' || updates.status === 'ON_LEAVE') {
+      } else if (updates.status === 'ABSENT' || updates.status === 'ON_LEAVE' || updates.status === '') {
         fields.push('check_in_time = ?');
         values.push('');
       }
@@ -429,7 +429,7 @@ export const db = {
   },
 
   // TASKS METHODS
-  async getTasks(filter?: { status?: string; employee_id?: string }): Promise<VerificationTask[]> {
+  async getTasks(filter?: { status?: string; employee_id?: string; username?: string }): Promise<VerificationTask[]> {
     const client = await getDb();
     let query = 'SELECT * FROM verification_tasks WHERE 1=1';
     const params: string[] = [];
@@ -438,18 +438,41 @@ export const db = {
       params.push(filter.status);
     }
     if (filter?.employee_id) {
-      query += ' AND assigned_to = ?';
-      params.push(filter.employee_id);
+      if (filter.username) {
+        query += ' AND (assigned_to = ? OR LOWER(assigned_to) = LOWER(?) OR LOWER(employee_name) = LOWER(?))';
+        params.push(filter.employee_id, filter.username, filter.username);
+      } else {
+        query += ' AND (assigned_to = ? OR LOWER(assigned_to) = LOWER(?))';
+        params.push(filter.employee_id, filter.employee_id);
+      }
     }
     query += ' ORDER BY created_at DESC';
     const res = await client.execute({ sql: query, args: params });
     return res.rows as unknown as VerificationTask[];
   },
 
-  async getTaskStats() {
+  async getTaskStats(filter?: { employee_id?: string; username?: string }) {
     const client = await getDb();
-    const rowsRes = await client.execute('SELECT status, COUNT(*) as count FROM verification_tasks GROUP BY status');
-    const totalRes = await client.execute('SELECT COUNT(*) as total FROM verification_tasks');
+    let whereClause = '';
+    const params: string[] = [];
+    if (filter?.employee_id) {
+      if (filter.username) {
+        whereClause = ' WHERE (assigned_to = ? OR LOWER(assigned_to) = LOWER(?) OR LOWER(employee_name) = LOWER(?))';
+        params.push(filter.employee_id, filter.username, filter.username);
+      } else {
+        whereClause = ' WHERE (assigned_to = ? OR LOWER(assigned_to) = LOWER(?))';
+        params.push(filter.employee_id, filter.employee_id);
+      }
+    }
+
+    const rowsRes = await client.execute({
+      sql: `SELECT status, COUNT(*) as count FROM verification_tasks ${whereClause} GROUP BY status`,
+      args: params,
+    });
+    const totalRes = await client.execute({
+      sql: `SELECT COUNT(*) as total FROM verification_tasks ${whereClause}`,
+      args: params,
+    });
 
     let inProgress = 0;
     let review = 0;

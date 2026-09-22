@@ -6,9 +6,11 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status') || 'ALL';
     const employee_id = searchParams.get('employee_id') || undefined;
+    const username = searchParams.get('username') || undefined;
 
-    const tasks = await db.getTasks({ status, employee_id });
-    const stats = await db.getTaskStats();
+    const filter = employee_id ? { status, employee_id, username } : { status };
+    const tasks = await db.getTasks(filter);
+    const stats = await db.getTaskStats(employee_id ? { employee_id, username } : undefined);
 
     return NextResponse.json({ tasks, stats });
   } catch (error: unknown) {
