@@ -194,7 +194,7 @@ export default function TechBackground() {
           zIndex: 1
         }}
       >
-        <source src="/pinterest-video.mp4" type="video/mp4" />
+        <source src="/pinterest-hero.mp4" type="video/mp4" />
       </video>
 
       {/* 3. Real-Time High-DPI 60fps Animation Canvas (Oscillating Waves & Subtle Sparks) */}
