@@ -16,7 +16,7 @@ export default function Logo({ size = "md", showTagline = false }: LogoProps) {
   const height = isSm ? 48 : isLg ? 80 : 55;
 
   return (
-    <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start", textDecoration: "none" }}>
+    <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start", textDecoration: "none", marginLeft: "-55px" }}>
       <Image
         src="/logo1_clean.png"
         alt="A2Z Softwares Solutions"
