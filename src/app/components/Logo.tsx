@@ -12,17 +12,22 @@ export default function Logo({ size = "md", showTagline = false }: LogoProps) {
   const isSm = size === "sm";
   const isLg = size === "lg";
 
-  const width = isSm ? 120 : isLg ? 200 : 160;
-  const height = isSm ? 45 : isLg ? 75 : 60;
+  const width = isSm ? 180 : isLg ? 280 : 200;
+  const height = isSm ? 48 : isLg ? 80 : 55;
 
   return (
     <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start", textDecoration: "none" }}>
       <Image
-        src="/a2z_logo.webp"
+        src="/logo1_clean.png"
         alt="A2Z Softwares Solutions"
         width={width}
         height={height}
-        style={{ objectFit: "contain", flexShrink: 0 }}
+        style={{
+          objectFit: "contain",
+          flexShrink: 0
+        }}
+        quality={100}
+        unoptimized
         priority
       />
       {showTagline && (

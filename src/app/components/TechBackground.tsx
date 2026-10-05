@@ -176,24 +176,7 @@ export default function TechBackground() {
         }
       `}</style>
 
-      {/* 1. Master 4K Custom 3D Holographic Developer Artwork (Balanced Visibility) */}
-      <div
-        style={{
-          position: "absolute",
-          inset: "-3%",
-          width: "106%",
-          height: "106%",
-          backgroundImage: "url(/custom-hologram-developer.jpg)",
-          backgroundSize: "cover",
-          backgroundPosition: "center 42%",
-          opacity: 0.62, // Slightly increased visibility
-          filter: "brightness(0.98) contrast(1.15) saturate(1.2)",
-          animation: "cinematicCameraDrift 22s ease-in-out infinite alternate",
-          zIndex: 0
-        }}
-      />
-
-      {/* 2. Optional Working MP4 Video Fallback */}
+      {/* 2. Crisp MP4 Video Background */}
       <video
         autoPlay
         loop
@@ -206,11 +189,9 @@ export default function TechBackground() {
           width: "100%",
           height: "100%",
           objectFit: "cover",
-          objectPosition: "center 42%",
-          filter: "hue-rotate(200deg) saturate(1.35) contrast(1.15) brightness(1.0)",
-          opacity: 0.45, // Slightly increased video visibility
-          zIndex: 1,
-          mixBlendMode: "screen"
+          objectPosition: "center",
+          filter: "brightness(0.7) contrast(1.1)", // Slightly darkened so white text stays readable
+          zIndex: 1
         }}
       >
         <source src="/pinterest-video.mp4" type="video/mp4" />

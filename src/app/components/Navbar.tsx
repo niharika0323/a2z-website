@@ -47,7 +47,7 @@ export default function Navbar() {
   return (
     <motion.header
       initial={{ y: -80, opacity: 0 }}
-      animate={{ 
+      animate={{
         y: visible ? 0 : -100,
         opacity: visible ? 1 : 0
       }}
@@ -64,22 +64,22 @@ export default function Navbar() {
         pointerEvents: 'none'
       }}
     >
-      <nav 
+      <nav
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '0.65rem 1.6rem',
+          padding: '0.35rem 1.6rem',
           borderRadius: '9999px',
-          background: scrolled 
-            ? 'rgba(9, 13, 22, 0.82)' 
-            : 'rgba(15, 23, 42, 0.55)',
+          background: scrolled
+            ? 'linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 15%, rgba(9,13,22,0.85) 60%, rgba(9,13,22,0.92) 100%)'
+            : 'linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 15%, rgba(15,23,42,0.65) 60%, rgba(15,23,42,0.85) 100%)',
           backdropFilter: 'blur(24px) saturate(180%)',
           WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
-          boxShadow: scrolled 
-            ? '0 15px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.15)' 
-            : '0 8px 30px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+          border: '1px solid rgba(0, 0, 0, 0.08)',
+          boxShadow: scrolled
+            ? '0 15px 40px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5)'
+            : '0 8px 30px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.5)',
           transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
           pointerEvents: 'auto'
         }}
@@ -100,7 +100,7 @@ export default function Navbar() {
         }} className="desktop-nav">
           {navLinks.map((item) => (
             <li key={item.label}>
-              <a 
+              <a
                 href={item.href}
                 style={{
                   textDecoration: 'none',
@@ -129,15 +129,15 @@ export default function Navbar() {
         {/* Action Button: Enterprise Portal Login */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <Link href="/login" className="desktop-portal-btn" style={{ textDecoration: 'none' }}>
-            <motion.button 
+            <motion.button
               whileHover={{ scale: 1.04, boxShadow: '0 0 25px rgba(56, 189, 248, 0.45)' }}
               whileTap={{ scale: 0.97 }}
-              style={{ 
-                padding: '0.52rem 1.35rem', 
-                fontSize: '0.88rem', 
+              style={{
+                padding: '0.52rem 1.35rem',
+                fontSize: '0.88rem',
                 fontWeight: 700,
-                display: 'inline-flex', 
-                alignItems: 'center', 
+                display: 'inline-flex',
+                alignItems: 'center',
                 gap: '0.45rem',
                 borderRadius: '9999px',
                 background: 'linear-gradient(135deg, #0284c7 0%, #00f5d4 100%)',
@@ -153,7 +153,7 @@ export default function Navbar() {
           </Link>
 
           {/* Mobile hamburger toggle */}
-          <button 
+          <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="mobile-toggle"
             aria-label="Toggle menu"
@@ -180,10 +180,10 @@ export default function Navbar() {
             exit={{ opacity: 0, y: -10 }}
             style={{
               marginTop: '0.5rem',
-              background: 'rgba(9, 13, 22, 0.96)',
+              background: 'rgba(255, 255, 255, 0.98)',
               backdropFilter: 'blur(24px)',
               borderRadius: '20px',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
+              border: '1px solid rgba(0, 0, 0, 0.08)',
               padding: '1.2rem',
               pointerEvents: 'auto',
               display: 'flex',
@@ -199,9 +199,9 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 style={{
                   textDecoration: 'none',
-                  color: '#f8fafc',
+                  color: '#0f172a',
                   fontSize: '1rem',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   padding: '0.6rem 0.8rem',
                   borderRadius: '8px',
                   display: 'flex',
@@ -209,36 +209,36 @@ export default function Navbar() {
                   justifyContent: 'space-between',
                   transition: 'background 0.2s ease'
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.04)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
                 {item.label}
-                <ArrowUpRight size={16} color="#38bdf8" />
+                <ArrowUpRight size={16} color="#0284c7" />
               </a>
             ))}
 
             {/* Subtle separator */}
             <div style={{
               height: '1px',
-              background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent)',
+              background: 'linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.08), transparent)',
               margin: '0.3rem 0'
             }} />
 
             {/* Mobile Navigation Drawer Action Button */}
-            <Link 
-              href="/login" 
+            <Link
+              href="/login"
               onClick={() => setMobileMenuOpen(false)}
               style={{ textDecoration: 'none', width: '100%', marginTop: '0.2rem' }}
             >
-              <motion.button 
+              <motion.button
                 whileTap={{ scale: 0.97 }}
-                style={{ 
+                style={{
                   width: '100%',
-                  padding: '0.75rem 1.2rem', 
-                  fontSize: '0.95rem', 
+                  padding: '0.75rem 1.2rem',
+                  fontSize: '0.95rem',
                   fontWeight: 700,
-                  display: 'flex', 
-                  alignItems: 'center', 
+                  display: 'flex',
+                  alignItems: 'center',
                   justifyContent: 'center',
                   gap: '0.55rem',
                   borderRadius: '12px',
